@@ -1,0 +1,96 @@
+<script>
+  function onPanelChange(value) {
+    const nearestParentDataPath = getNearestParentDataPath(dataPath);
+    const role = api.getValue(nearestParentDataPath) || record;
+
+    // If this is an nested item, just return. (Like a weapon attachment)
+    let pathToFields = "fields";
+    if (nearestParentDataPath !== "") {
+      pathToFields = `${nearestParentDataPath}.fields`;
+    }
+    let pathToData = "data";
+    if (nearestParentDataPath !== "") {
+      pathToData = `${nearestParentDataPath}.data`;
+    }
+
+    const valuesToSet = {
+      [`${pathToFields}.execProperties.hidden`]:
+        value === "exec" ? false : true,
+      [`${pathToFields}.fixerProperties.hidden`]:
+        value === "fixer" ? false : true,
+      [`${pathToFields}.lawmanProperties.hidden`]:
+        value === "lawman" ? false : true,
+      [`${pathToFields}.mediaProperties.hidden`]:
+        value === "media" ? false : true,
+      [`${pathToFields}.medtechProperties.hidden`]:
+        value === "medtech" ? false : true,
+      [`${pathToFields}.netrunnerProperties.hidden`]:
+        value === "netrunner" ? false : true,
+      [`${pathToFields}.nomadProperties.hidden`]:
+        value === "nomad" ? false : true,
+      [`${pathToFields}.rockerboyProperties.hidden`]:
+        value === "rockerboy" ? false : true,
+      [`${pathToFields}.soloProperties.hidden`]:
+        value === "solo" ? false : true,
+      [`${pathToFields}.techProperties.hidden`]:
+        value === "tech" ? false : true,
+      [`${pathToFields}.customProperties.hidden`]:
+        value === "custom" ? false : true,
+    };
+
+    api.setValues(valuesToSet);
+  }
+</script>
+
+<div
+  style="display: flex; flex-direction: column; width: 100%; margin-bottom: 4px"
+>
+  <div style="display: flex; gap: 4px">
+    <div
+      style="width: 125px; height: 125px; min-height: 125px; min-width: 125px"
+    >
+      <portrait width="125px" height="125px" field="portrait"></portrait>
+    </div>
+    <div
+      style="
+        display: flex;
+        gap: 4px;
+        flex-direction: column;
+        width: 100%;
+        margin-bottom: 4px;
+      "
+    >
+      <stringfield
+        field="roleAbility"
+        label="Role Ability"
+        placeholder="Enter Role Ability..."
+      ></stringfield>
+      <!-- Role panel select -->
+      <dropdown
+        width="100%"
+        field="panel"
+        label="Role Panel"
+        placeholder="Select Panel..."
+        onchange="onPanelChange(value)"
+        options='[{"label": "Exec", "value": "exec"}, {"label": "Fixer", "value": "fixer"}, 
+      {"label": "Lawman", "value": "lawman"}, {"label": "Media", "value": "media"},
+      {"label": "Medtech", "value": "medtech"}, {"label": "Netrunner", "value": "netrunner"}, 
+      {"label": "Nomad", "value": "nomad"}, {"label": "Rockerboy", "value": "rockerboy"}, 
+      {"label": "Solo", "value": "solo"}, {"label": "Tech", "value": "tech"}, {"label": "Custom", "value": "custom"}]'
+      ></dropdown>
+    </div>
+  </div>
+
+  <div style="margin-top: 8px">
+    <divider label="Description"></divider>
+  </div>
+
+  <div style="margin-top: 8px">
+    <richtextfield
+      field="description"
+      label="Description"
+      placeholder="Enter Item description..."
+    >
+    </richtextfield>
+  </div>
+</div>

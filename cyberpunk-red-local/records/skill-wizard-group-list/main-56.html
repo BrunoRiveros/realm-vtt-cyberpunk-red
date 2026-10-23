@@ -1,0 +1,38 @@
+<div style="display: flex; flex-direction: column; width: 100%">
+  <div style="display: flex; flex-direction: row; gap: 4px">
+    <div style="min-width: 60px; width: 100%">
+      <namefield
+        placeholder="Group name..."
+        variant="unstyled"
+        textalign="left"
+        size="sm"
+        width="100%"
+        field="namefield"
+        bold="true"
+        color="primary"
+      ></namefield>
+    </div>
+    <div
+      style="
+        display: flex;
+        flex-direction: row;
+        gap: 4px;
+        align-items: center;
+        margin-left: auto;
+      "
+    >
+      <div style="width: 50px">
+        <label variant="bold" size="xs" label="LVL" textalign="center"></label>
+      </div>
+      <div style="width: 36px">
+        <label variant="bold" size="xs" label="BASE" textalign="center"></label>
+      </div>
+    </div>
+  </div>
+  <list
+    listtype="skill_wizard_list"
+    field="skills"
+    variant="striped"
+    height="100%"
+  ></list>
+</div>

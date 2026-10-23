@@ -1,0 +1,61 @@
+<script>
+  function onCallBackup() {
+    // Get selected backup
+    const nearestBackupDataPath = getNearestParentDataPath(dataPath);
+    const backupSelection = api.getValue(nearestBackupDataPath);
+    let backupRecordLinks = [];
+    if (backupSelection?.data?.backup) {
+      try {
+        const backupRecordLink = JSON.parse(backupSelection.data.backup);
+        backupRecordLinks.push({
+          value: {
+            ...backupRecordLink,
+            recordType: "npcs",
+          },
+          tooltip: backupRecordLink.name || "Backup",
+          type: "npcs",
+        });
+      } catch (e) {
+        // Noop
+      }
+    }
+
+    // Arrival is in 1d6 rounds, on success
+    const arrivalMacro = `\`\`\`Roll_Estimated_Arrival
+api.roll('1d6', {}, 'arrival');
+\`\`\`
+`;
+
+    // Roll BACKUP which is 1d10 and must be <= your Backup Rank
+    performSkillRoll(record, "Backup", {
+      isDodge: false,
+      roleAbility: "Lawman",
+      abilityName: "Backup",
+      rollUnderOrEqual: true,
+      overrideDescription: arrivalMacro,
+      recordLinks: backupRecordLinks,
+    });
+  }
+</script>
+
+<div style="display: flex; gap: 4px; align-items: center">
+  <div>
+    <iconbutton
+      size="md"
+      hidden="false"
+      field="callBackupBtn"
+      color="primary"
+      variant="light"
+      options='[{"icon": "IconPhone", "label": "Call Backup", "value": "callBackup"}]'
+      onclick="onCallBackup()"
+    ></iconbutton>
+  </div>
+  <div style="flex-grow: 1">
+    <namefield
+      size="xs"
+      field="name"
+      variant="standard"
+      placeholder="Backup Name..."
+    ></namefield>
+  </div>
+</div>

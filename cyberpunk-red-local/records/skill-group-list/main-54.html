@@ -1,0 +1,39 @@
+<div style="display: flex; flex-direction: column; width: 100%; margin-bottom: 8px">
+  <div style="display: flex; flex-direction: row; gap: 4px">
+    <div style="min-width: 60px; width: 100%">
+      <namefield
+        placeholder="Group name..."
+        variant="unstyled"
+        textalign="left"
+        size="xs"
+        width="100%"
+        field="namefield"
+        bold="true"
+      ></namefield>
+    </div>
+    <div
+      style="
+        display: flex;
+        flex-direction: row;
+        gap: 4px;
+        align-items: center;
+        margin-left: auto;
+      "
+    >
+      <div style="width: 36px">
+        <label variant="bold" size="xs" label="LVL" textalign="center"></label>
+      </div>
+      <div style="width: 36px">
+        <label variant="bold" size="xs" label="BASE" textalign="center"></label>
+      </div>
+      <div style="width: 34px"></div>
+      <box width="16px" field="spacer" hideonlocked="true"></box>
+    </div>
+  </div>
+  <list
+    listtype="skill_list"
+    field="skills"
+    variant="striped"
+    height="100%"
+  ></list>
+</div>

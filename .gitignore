@@ -1,0 +1,23 @@
+
+node_modules/
+.env
+.env.*
+!.env.example
+
+# Datos temporales y resultados de pruebas
+build-test.json
+campaigns-test.json
+items-test.json
+items-gear.json
+pistolas-preview.json
+
+# Backups: mantener fuera de Git
+backup-*.json
+backup-borrados-*.json
+cyberpunk-red-local/BACKUP-INFO.txt
+
+# Configuración local de herramientas
+.claude/settings.local.json
+
+# Logs
+npm-debug.log*

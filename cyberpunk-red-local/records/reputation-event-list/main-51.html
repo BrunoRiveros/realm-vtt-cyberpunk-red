@@ -1,0 +1,48 @@
+<script>
+  function onReputationEventChange() {
+    // Set the character's reputation to the highest value in the list
+    // (or the lowest if negative)
+    let highestRep = 0;
+    let curHighestRep = 0;
+    const repEventList = record.data.repEventList || [];
+    repEventList.forEach((repEvent) => {
+      const repValue = parseInt(repEvent.data?.reputation, 10);
+      if (!isNaN(repValue) && Math.abs(repValue) > Math.abs(curHighestRep)) {
+        curHighestRep = Math.abs(repValue);
+        highestRep = repValue;
+      } else if (
+        !isNaN(repValue) &&
+        Math.abs(repValue) === Math.abs(curHighestRep)
+      ) {
+        if (repValue > 0) {
+          highestRep = repValue;
+        }
+      }
+    });
+
+    api.setValues({ "data.reputation": highestRep });
+  }
+</script>
+
+<div
+  class="rvtt-cpr-row"
+  style="height: 30px; display: flex; gap: 4px; align-items: center"
+>
+  <div style="flex-grow: 1">
+    <namefield
+      size="xs"
+      variant="standard"
+      placeholder="Event"
+      field="namefield"
+    ></namefield>
+  </div>
+  <numberfield
+    field="reputation"
+    label="Reputation Value"
+    size="xs"
+    placeholder="0"
+    width="60px"
+    variant="tooltip"
+    onchange="onReputationEventChange()"
+  ></numberfield>
+</div>

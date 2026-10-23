@@ -1,0 +1,46 @@
+<script>
+  function useProgramOrHardware(value) {
+    const itemDataPath = dataPath.replace(".data.useProgBtn", "");
+    useItem(record, itemDataPath);
+  }
+</script>
+
+<div style="height: 30px; display: flex; gap: 4px; align-items: center">
+  <div style="width: 30px; min-width: 30px">
+    <portrait width="30px" height="30px" name="portrait"></portrait>
+  </div>
+  <div style="width: 100px">
+    <stringfield
+      size="xs"
+      label="Class"
+      variant="tooltip-underline"
+      field="programHardwareType"
+      placeholder="Class"
+      editable="false"
+    ></stringfield>
+  </div>
+  <div style="flex-grow: 1">
+    <namefield
+      size="xs"
+      label="Name"
+      variant="tooltip-underline"
+      placeholder="Item"
+      field="namefield"
+    />
+  </div>
+  <div style="width: 30px; justify-content: center; display: flex">
+    <checkbox
+      size="xs"
+      field="active"
+      editable="true"
+      variant="light"
+    ></checkbox>
+  </div>
+  <button
+    size="xs"
+    field="useProgBtn"
+    variant="light"
+    label="Use"
+    onclick="useProgramOrHardware(value);"
+  ></button>
+</div>

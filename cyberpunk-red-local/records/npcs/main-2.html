@@ -1,0 +1,2211 @@
+<script>
+  function onTypeChange(npcType) {
+    const fieldsToHide = [];
+    const fieldsToShow = [];
+    const defenseType = record.data?.defenseType || "";
+    if (
+      npcType === "mook" ||
+      npcType === "team member" ||
+      npcType === "backup" ||
+      npcType === "defense" ||
+      npcType === "simple"
+    ) {
+      if (npcType !== "defense") {
+        fieldsToShow.push("npcLevel");
+        fieldsToShow.push("seriouslyWoundedAndDeathSave");
+      }
+      fieldsToShow.push("additionalInfoLabel");
+      fieldsToShow.push("healthAndCover");
+      fieldsToShow.push("baseStats");
+      fieldsToShow.push("attacks");
+      fieldsToShow.push("inventoryProps");
+      fieldsToHide.push("vehicleBaseProps");
+      fieldsToHide.push("programBaseProps");
+      fieldsToHide.push("programProps");
+      fieldsToHide.push("programUseProps");
+      fieldsToHide.push("vehicleProps");
+      fieldsToHide.push("manufacturer");
+      fieldsToHide.push("additionalVehicleProps");
+      fieldsToHide.push("damage");
+      fieldsToHide.push("iceDamage");
+      fieldsToHide.push("useProgramBtn");
+      if (npcType === "mook") {
+        fieldsToShow.push("reputation");
+      }
+      if (npcType === "team member") {
+        fieldsToShow.push("teamMemberLoyalty");
+        fieldsToShow.push("reputation");
+      } else {
+        fieldsToHide.push("teamMemberLoyalty");
+      }
+      if (npcType === "backup" || npcType === "defense" || npcType === "simple") {
+        // Backup/Defense/Simple use a combatNumber instead of full stats
+        if (npcType !== "defense" || defenseType !== "environmental") {
+          fieldsToShow.push("combatNumber");
+          fieldsToShow.push("totalMove");
+        }
+        if (
+          (npcType !== "defense" ||
+            (defenseType !== "emplaced" && defenseType !== "environmental")) &&
+          npcType !== "backup" &&
+          npcType !== "simple"
+        ) {
+          fieldsToShow.push("totalMove");
+        }
+        if (npcType === "defense") {
+          fieldsToHide.push("totalBody");
+          if (defenseType === "environmental") {
+            fieldsToShow.push("environmentalLabel");
+          }
+        } else {
+          fieldsToHide.push("environmentalLabel");
+          fieldsToShow.push("totalBody");
+        }
+        if (npcType === "simple") {
+          fieldsToShow.push("skillProps");
+          fieldsToShow.push("totalInit");
+        } else {
+          fieldsToHide.push("skillProps");
+          fieldsToHide.push("totalInit");
+        }
+        fieldsToHide.push("totalInt");
+        fieldsToHide.push("totalRef");
+        fieldsToHide.push("totalDex");
+        fieldsToHide.push("totalTech");
+        fieldsToHide.push("totalCool");
+        fieldsToHide.push("totalWill");
+        fieldsToHide.push("totalCurLuck");
+        fieldsToHide.push("totalCurEmp");
+      } else {
+        fieldsToHide.push("combatNumber");
+        fieldsToHide.push("totalInit");
+        fieldsToShow.push("skillProps");
+        fieldsToShow.push("totalInt");
+        fieldsToShow.push("totalBody");
+        fieldsToShow.push("totalMove");
+        fieldsToShow.push("totalRef");
+        fieldsToShow.push("totalDex");
+        fieldsToShow.push("totalTech");
+        fieldsToShow.push("totalCool");
+        fieldsToShow.push("totalWill");
+        fieldsToShow.push("totalCurLuck");
+        fieldsToShow.push("totalCurEmp");
+      }
+      if (
+        npcType === "mook" ||
+        npcType === "team member" ||
+        npcType === "backup" ||
+        npcType === "simple"
+      ) {
+        fieldsToShow.push("conditionsList");
+      } else {
+        fieldsToHide.push("conditionsList");
+      }
+      // Defense values
+      if (npcType === "defense") {
+        // Active and emplaced defenses use combat number
+        if (defenseType === "environmental") {
+          fieldsToHide.push("combatNumber");
+          fieldsToShow.push("environmentalLabel");
+        } else {
+          fieldsToShow.push("combatNumber");
+          fieldsToHide.push("environmentalLabel");
+        }
+        if (defenseType === "emplaced" || defenseType === "environmental") {
+          fieldsToHide.push("totalMove");
+        } else {
+          fieldsToShow.push("totalMove");
+        }
+        // Active defenses have an evasion field
+        if (
+          defenseType === undefined ||
+          defenseType === "" ||
+          defenseType === "active"
+        ) {
+          fieldsToShow.push("evasion");
+        } else {
+          fieldsToHide.push("evasion");
+        }
+        // For defenses we also hide some health related fields and npc level
+        fieldsToHide.push("npcLevel");
+        fieldsToHide.push("seriouslyWoundedAndDeathSave");
+        fieldsToShow.push("defenseType");
+        fieldsToShow.push("defenseProps");
+      } else {
+        fieldsToHide.push("evasion");
+        fieldsToHide.push("defenseType");
+        fieldsToHide.push("defenseProps");
+      }
+    } else if (npcType === "vehicle") {
+      fieldsToShow.push("vehicleBaseProps");
+      fieldsToShow.push("vehicleProps");
+      fieldsToShow.push("manufacturer");
+      fieldsToShow.push("additionalVehicleProps");
+      // Combat Speed reuses the shared totalMove field — ensure its cell is
+      // visible for vehicles even if a prior type (e.g. an environmental
+      // defense) had hidden it.
+      fieldsToShow.push("totalMove");
+      fieldsToHide.push("reputation");
+      fieldsToHide.push("damage");
+      fieldsToHide.push("iceDamage");
+      fieldsToHide.push("useProgramBtn");
+      fieldsToHide.push("baseStats");
+      fieldsToHide.push("skillProps");
+      fieldsToHide.push("inventoryProps");
+      fieldsToHide.push("programBaseProps");
+      fieldsToHide.push("programProps");
+      fieldsToHide.push("programUseProps");
+      fieldsToHide.push("conditionsList");
+      fieldsToHide.push("teamMemberLoyalty");
+      fieldsToHide.push("combatNumber");
+      fieldsToHide.push("npcLevel");
+      fieldsToHide.push("healthAndCover");
+      fieldsToHide.push("seriouslyWoundedAndDeathSave");
+      fieldsToHide.push("attacks");
+      fieldsToHide.push("evasion");
+      fieldsToHide.push("defenseType");
+      fieldsToHide.push("defenseProps");
+      fieldsToHide.push("additionalInfoLabel");
+    } else if (
+      npcType === "program" ||
+      npcType === "black ice" ||
+      npcType === "demon"
+    ) {
+      fieldsToShow.push("programBaseProps");
+      fieldsToShow.push("programProps");
+      fieldsToShow.push("programUseProps");
+      fieldsToShow.push("useProgramBtn");
+      if (npcType === "black ice") {
+        fieldsToShow.push("per");
+        fieldsToShow.push("spd");
+        fieldsToShow.push("atk");
+        fieldsToShow.push("def");
+        fieldsToShow.push("damage");
+        fieldsToShow.push("blackICEType");
+        fieldsToShow.push("slots");
+        fieldsToHide.push("programHardwareType");
+        fieldsToHide.push("interface");
+        fieldsToHide.push("combatNumber");
+        fieldsToHide.push("netActions");
+        fieldsToHide.push("iceDamage");
+      } else if (npcType === "demon") {
+        fieldsToShow.push("interface");
+        fieldsToShow.push("combatNumber");
+        fieldsToShow.push("netActions");
+        fieldsToShow.push("damage");
+        fieldsToHide.push("iceDamage");
+        fieldsToHide.push("blackICEType");
+        fieldsToHide.push("slots");
+        fieldsToHide.push("programHardwareType");
+        fieldsToHide.push("per");
+        fieldsToHide.push("spd");
+        fieldsToHide.push("atk");
+        fieldsToHide.push("def");
+      } else {
+        fieldsToShow.push("atk");
+        fieldsToShow.push("def");
+        fieldsToShow.push("programHardwareType");
+        fieldsToShow.push("slots");
+        fieldsToShow.push("damage");
+        fieldsToShow.push("iceDamage");
+        fieldsToHide.push("blackICEType");
+        fieldsToHide.push("interface");
+        fieldsToHide.push("combatNumber");
+        fieldsToHide.push("netActions");
+        fieldsToHide.push("per");
+        fieldsToHide.push("spd");
+      }
+      fieldsToHide.push("vehicleBaseProps");
+      fieldsToHide.push("vehicleProps");
+      fieldsToHide.push("manufacturer");
+      fieldsToHide.push("additionalVehicleProps");
+      fieldsToHide.push("combatNumber");
+      fieldsToHide.push("npcLevel");
+      fieldsToHide.push("healthAndCover");
+      fieldsToHide.push("seriouslyWoundedAndDeathSave");
+      fieldsToHide.push("baseStats");
+      fieldsToHide.push("attacks");
+      fieldsToHide.push("skillProps");
+      fieldsToHide.push("inventoryProps");
+      fieldsToHide.push("conditionsList");
+      fieldsToHide.push("teamMemberLoyalty");
+      fieldsToHide.push("evasion");
+      fieldsToHide.push("defenseType");
+      fieldsToHide.push("defenseProps");
+      fieldsToHide.push("reputation");
+      fieldsToHide.push("additionalInfoLabel");
+    }
+
+    api.setHidden(fieldsToHide, true, () => {
+      // Do this in callback to avoid race condition
+      api.setHidden(fieldsToShow, false);
+    });
+  }
+
+  function onDefenseTypeChange(defenseType) {
+    const fieldsToHide = [];
+    const fieldsToShow = [];
+    if (defenseType === "environmental") {
+      fieldsToShow.push("environmentalLabel");
+      fieldsToHide.push("combatNumber");
+      fieldsToHide.push("totalMove");
+      fieldsToHide.push("evasion");
+    } else if (defenseType === "emplaced") {
+      fieldsToHide.push("environmentalLabel");
+
+      fieldsToShow.push("combatNumber");
+      fieldsToHide.push("totalMove");
+      fieldsToHide.push("evasion");
+    } else {
+      fieldsToHide.push("environmentalLabel");
+      fieldsToShow.push("combatNumber");
+      fieldsToShow.push("totalMove");
+      fieldsToShow.push("evasion");
+    }
+    api.setHidden(fieldsToHide, true, () => {
+      // Do this in callback to avoid race condition
+      api.setHidden(fieldsToShow, false);
+    });
+  }
+
+  function onDropCondition(recordLink) {
+    addCondition(record, recordLink);
+  }
+
+  function onDrop(type, recordLink, sourceInfo) {
+    const npcType = record.data?.type || "mook";
+    if (type === "roles" && (npcType === "mook" || npcType === "team member")) {
+      // Only mooks and team members have roles
+      onDropRole(recordLink);
+    } else if (type === "items") {
+      onDropItem(recordLink);
+      if (sourceInfo) {
+        if (sourceInfo?.type === "list") {
+          // Query for the record first, then remove the item from the source list
+          api.getRecord(
+            sourceInfo.recordType,
+            sourceInfo.recordId,
+            (sourceRecord) => {
+              api.removeValueFromRecord(
+                sourceRecord,
+                sourceInfo.dataPath,
+                sourceInfo.index
+              );
+            }
+          );
+        } else if (sourceInfo?.type === "partysheet") {
+          // Remove the item from party sheet
+          api.removePartySheetItem(sourceInfo.itemId);
+        }
+      }
+    } else if (type === "conditions") {
+      onDropCondition(recordLink);
+    }
+  }
+
+  function onDropItem(recordLink) {
+    const item = recordLink?.value;
+
+    const isDrug = item?.data?.type === "drug";
+    const isAmmo = item?.data?.type === "ammo";
+    const isAmmoWithValues =
+      isAmmo &&
+      ((item?.data?.effects && item?.data?.effects.length > 0) ||
+        (item?.data?.conditions && item?.data?.conditions.length > 0) ||
+        item?.data?.checkSkill ||
+        item?.data?.checkDV ||
+        item?.data?.healing ||
+        item?.data?.useDamage);
+    const isConsumable = item?.data?.consumable || false;
+    const hasUseBtn = item?.data?.hasUseBtn || false;
+
+    let unitCount = item.data?.count || 1;
+    // If ammo, get the unit count
+    if (item.data?.type === "ammo" && unitCount === 1) {
+      unitCount = item.data?.rounds || 1;
+    }
+
+    // Add the item and set the attunement hidden field to visible if requires attunement
+    const itemToAdd = {
+      ...item,
+      icon: "IconBox",
+      data: {
+        ...item?.data,
+        // Track old ID for count tracking
+        fromId: item._id,
+        // Default count to 1
+        count: unitCount,
+      },
+      fields: {
+        ...item?.fields,
+        useBtn: {
+          hidden: !isConsumable && !hasUseBtn && !isAmmoWithValues && !isDrug,
+        },
+      },
+    };
+
+    // Determine if we are adding the item or adding count to an existing item
+    const items = record?.data?.inventory || [];
+    const index = items.findIndex((i) => i.data?.fromId === item._id);
+
+    // If the item is an item pack, we're adding a list of items
+    if (item.data?.type === "pack") {
+      // Get the total weight of all items in the pack
+      const itemsInPack = item.data?.items || [];
+      const valuesToSet = {};
+      // Add any currency in pack to character
+      valuesToSet["data.cash"] =
+        (record?.data?.cash || 0) + (item.data?.cash || 0);
+      const itemsToAdd = itemsInPack
+        .map((item) => {
+          // If this is existing item, get the current count
+          let thisIndex = items.findIndex((i) => i.data?.fromId === item._id);
+          let existingItem = thisIndex !== -1 ? items[thisIndex] : undefined;
+          // Ignore cyberware, which we don't want to allow stacking
+          if (existingItem && existingItem.data?.type === "cyberware") {
+            thisIndex = -1;
+            existingItem = undefined;
+          }
+          let itemCount = parseFloat(item?.data?.count || "0");
+          const isConsumable = item.data?.consumable || false;
+          const isAmmo = item.data?.type === "ammo";
+          const isAmmoWithValues =
+            isAmmo &&
+            ((item.data?.effects && item.data?.effects.length > 0) ||
+              (item.data?.conditions && item.data?.conditions.length > 0) ||
+              item.data?.checkSkill ||
+              item.data?.checkDV ||
+              item.data?.healing ||
+              item.data?.useDamage);
+          // If ammo, multiply the unit count by the item count
+          if (isAmmo) {
+            itemCount = itemCount * (item.data?.rounds || 1);
+          }
+
+          let curCount = parseFloat(existingItem?.data?.count || "0");
+          if (!existingItem) {
+            return {
+              ...item,
+              icon: "IconBox",
+              data: {
+                ...item.data,
+                fromId: item._id,
+                count: itemCount,
+              },
+              fields: {
+                ...item?.fields,
+                useBtn: {
+                  hidden:
+                    !isConsumable && !hasUseBtn && !isAmmoWithValues && !isDrug,
+                },
+              },
+            };
+          } else {
+            valuesToSet[`data.inventory.${thisIndex}.data.count`] =
+              curCount + itemCount;
+          }
+        })
+        .filter((i) => i);
+      api.addValues(`data.inventory`, itemsToAdd, (record) => {
+        if (Object.keys(valuesToSet).length > 0) {
+          api.setValues(valuesToSet);
+        }
+      });
+    } else {
+      let existingItem = index !== -1 ? items[index] : undefined;
+      // Ignore cyberware, which we don't want to allow stacking
+      if (existingItem && existingItem.data?.type === "cyberware") {
+        existingItem = undefined;
+      }
+      if (existingItem) {
+        // Add count to existing item
+        const count = parseFloat(existingItem.data?.count || "0");
+        let unitCount = parseFloat(item.data?.count || "1");
+        // If ammo, get the unit count
+        if (existingItem.data?.type === "ammo" && unitCount === 1) {
+          unitCount = existingItem.data?.rounds || 1;
+        }
+        // Update the value
+        api.setValue(`data.inventory.${index}.data.count`, count + unitCount);
+      } else {
+        // Add the item to the list
+        api.addValue(`data.inventory`, itemToAdd);
+      }
+    }
+  }
+
+  function onDropRole(recordLink) {
+    addRole(record, recordLink);
+  }
+
+  function rollInitiative() {
+    const roll = "1d10";
+    // Get modifiers for initiative, which is REF
+    const modifiers = [];
+    const ref = parseInt(record?.data?.totalRef || "0", 10);
+    // Only mook and team members use REF; simple uses INIT
+    if (
+      record.data.type === undefined ||
+      record.data.type === "" ||
+      record.data.type === "mook" ||
+      record.data.type === "team member"
+    ) {
+      modifiers.push({
+        name: "REF",
+        value: ref,
+        active: true,
+      });
+    } else if (record.data.type === "simple") {
+      const init = parseInt(record?.data?.totalInit || "0", 10);
+      modifiers.push({
+        name: "INIT",
+        value: init,
+        active: true,
+      });
+    }
+
+    // Check effects for all initiative bonuses and penalties
+    const initiativeModifiers = getEffectsAndModifiersForToken(record, [
+      "initiativeBonus",
+      "initiativePenalty",
+    ]);
+    initiativeModifiers.forEach((modifier) => {
+      modifiers.push(modifier);
+    });
+
+    // Check for 4 points in fumbleRecovery if solo role
+    let fumbleRecovery = false;
+    (record.data?.roles || []).forEach((role) => {
+      if (role.data?.fumbleRecoveryRank >= 4) {
+        fumbleRecovery = true;
+      }
+    });
+
+    api.promptRoll(
+      "Initiative",
+      roll,
+      modifiers,
+      {
+        rollName: "Initiative",
+        recordType: "characters",
+        tooltip: "Initiative Roll",
+        fumbleRecovery: fumbleRecovery,
+      },
+      "initiative"
+    );
+  }
+
+  function onRollDeathSave() {
+    // Death save is just a d10 rolling under the body stat
+    // Use actualBody where we track the actual value used for HP and Death Saves
+    const actualBody = record.data?.actualBody;
+    const body = record.data?.totalBody || 0;
+    let scoreToUse = body;
+    if (actualBody !== undefined && actualBody !== null) {
+      scoreToUse = actualBody;
+    }
+    const deathSaveMetadata = {
+      dv: scoreToUse,
+    };
+    api.promptRoll("Death Save", "1d10", [], deathSaveMetadata, "deathSave");
+  }
+
+  function throwObject() {
+    performThrowObject(record);
+  }
+
+  function throwAmmoOptions() {
+    // Get a list of equipped ammo
+    const equippedAmmo =
+      (record.data?.inventory || [])?.filter(
+        (item) =>
+          item.data?.carried === "equipped" && item.data?.type === "ammo"
+      ) || [];
+
+    if (equippedAmmo.length > 0) {
+      return equippedAmmo.map((ammo) => ({
+        value: JSON.stringify({ _id: ammo._id, name: ammo.name }),
+        label: ammo.name,
+      }));
+    } else {
+      return [{ value: "none", label: "None" }];
+    }
+  }
+
+  function onRoleDelete() {
+    updateRoles(record);
+  }
+
+  function onUpdateStat(value, stat) {
+    const bestEquippedArmor = getBestEquippedArmor(record);
+    const penalty = bestEquippedArmor.highestPenalty;
+    setStatsAndSkills(record, value, stat, null, penalty, true);
+  }
+
+  function onAddDeleteSkill() {
+    // Update all skills
+    // Requery the record to get the latest data
+    api.getRecord("npcs", record._id, (updatedRecord) => {
+      const valuesToSet = {};
+      const skills = updatedRecord.data?.skills || [];
+      [
+        "int",
+        "ref",
+        "dex",
+        "tech",
+        "cool",
+        "will",
+        "curLuck",
+        "move",
+        "body",
+        "curEmp",
+      ].forEach((skill) => {
+        let fieldName;
+        if (skill === "curLuck") {
+          fieldName = "totalCurLuck";
+        } else if (skill === "curEmp") {
+          fieldName = "totalCurEmp";
+        } else {
+          fieldName = `total${capitalize(skill)}`;
+        }
+
+        const skillValue = updatedRecord.data?.[fieldName] || 0;
+        const bestEquippedArmor = getBestEquippedArmor(updatedRecord);
+        const penalty = bestEquippedArmor.highestPenalty;
+        setStatsAndSkills(
+          updatedRecord,
+          skillValue,
+          skill,
+          valuesToSet,
+          penalty,
+          true
+        );
+      });
+      api.setValuesOnRecord(updatedRecord, valuesToSet);
+    });
+  }
+
+  function clickImportSkills() {
+    api.closeOpenedPopovers();
+  }
+
+  function importSkills() {
+    // First re-query the record, in case we're in the middle of updating
+    // on blur of the skillText field.
+    const recordId = record._id;
+    // First, wait for the skillText field to be updated, then re-query the record.
+    let recordType = record.linked === undefined ? "npcs" : "tokens";
+
+    api.getRecord(recordType, recordId, (record) => {
+      let skillText = record.data?.skillText || "";
+
+      if (!skillText.trim()) {
+        return;
+      }
+
+      // Convert bullet points to commas
+      skillText = skillText.split("•").join(",");
+
+      // Remove all newline characters first - use character codes to avoid sanitization issues
+      skillText = skillText.split(String.fromCharCode(13, 10)).join(","); // \r\n
+      skillText = skillText.split(String.fromCharCode(10)).join(","); // \n
+      skillText = skillText.split(String.fromCharCode(13)).join(","); // \r
+
+      // First try comma-separated parsing
+      let skillsArray = [];
+      const skillEntries = skillText.split(",");
+      let allSkillParts = [];
+
+      // Check if comma-separated parsing works well
+      let commaParsingWorked = true;
+      for (let i = 0; i < skillEntries.length; i++) {
+        const entry = skillEntries[i].trim();
+        if (entry) {
+          // Split by spaces and find the last number as the skill value
+          const parts = entry.split(" ");
+          let skillValue = "";
+          let skillNameParts = [];
+
+          // Work backwards to find the skill value (last number)
+          for (let j = parts.length - 1; j >= 0; j--) {
+            const part = parts[j].trim();
+            if (part && !isNaN(parseInt(part)) && !skillValue) {
+              skillValue = part;
+            } else if (part) {
+              skillNameParts.unshift(part);
+            }
+          }
+
+          if (skillValue && skillNameParts.length > 0) {
+            const skillName = skillNameParts.join(" ");
+            allSkillParts.push(skillName);
+            allSkillParts.push(skillValue);
+          } else {
+            // If we can't parse this entry properly, comma parsing might not be working
+            commaParsingWorked = false;
+            break;
+          }
+        }
+      }
+
+      // If comma parsing didn't work well, try space-based parsing
+      if (!commaParsingWorked || allSkillParts.length === 0) {
+        allSkillParts = [];
+
+        // Split the entire text by spaces
+        const allParts = skillText.split(" ");
+        let currentSkillParts = [];
+
+        for (let i = 0; i < allParts.length; i++) {
+          const part = allParts[i].trim();
+          if (!part) continue;
+
+          // Check if this part is a number
+          if (!isNaN(parseInt(part))) {
+            // This is a skill value
+            if (currentSkillParts.length > 0) {
+              // We have a skill name, so add the skill
+              const skillName = currentSkillParts.join(" ");
+              allSkillParts.push(skillName);
+              allSkillParts.push(part);
+              currentSkillParts = [];
+            }
+          } else {
+            // This is part of a skill name
+            currentSkillParts.push(part);
+          }
+        }
+      }
+
+      // Process skills in pairs (name, value)
+      for (let i = 0; i < allSkillParts.length; i += 2) {
+        const skillName = allSkillParts[i]?.trim();
+        const skillValue = allSkillParts[i + 1]?.trim();
+
+        if (skillName && skillValue && !isNaN(parseInt(skillValue))) {
+          const baseValue = parseInt(skillValue);
+          const skillStat = findSkillStat(skillName);
+
+          // Get the stat value from the record
+          let statFieldName;
+          if (skillStat === "luck") {
+            statFieldName = "totalCurLuck";
+          } else if (skillStat === "emp") {
+            statFieldName = "totalCurEmp";
+          } else {
+            statFieldName = `total${
+              skillStat.charAt(0).toUpperCase() + skillStat.slice(1)
+            }`;
+          }
+
+          const statValue = parseInt(record?.data?.[statFieldName] || "0", 10);
+
+          // Calculate level (base value minus stat)
+          const levelValue = Math.max(baseValue - statValue, 0);
+
+          skillsArray.push({
+            _id: generateUuid(),
+            name: skillName.split(",").join(" ").trim(),
+            unidentifiedName: skillName.split(",").join(" ").trim(),
+            data: {
+              base: baseValue,
+              lvl: levelValue,
+              stat: skillStat,
+            },
+          });
+        }
+      }
+
+      // Set the skills array to the record
+      if (skillsArray.length > 0) {
+        api.setValuesOnRecord(record, {
+          "data.skills": skillsArray,
+          "data.skillText": "",
+        });
+      }
+    });
+  }
+
+  function onUpdateSp(field) {
+    const newSp = value;
+    // Update the SP on the item that represents the armor
+    const equippedArmor = getBestEquippedArmor(record);
+    const armor = equippedArmor[field]?.[0];
+    let valuesToSet = {};
+    if (armor) {
+      // Find the index directly by searching through the inventory array
+      const inventoryArray = record?.data?.inventory || [];
+      const armorItemIndex = inventoryArray.findIndex(
+        (item) => item._id === armor._id
+      );
+
+      if (armorItemIndex !== -1) {
+        valuesToSet[`data.inventory.${armorItemIndex}.data.cur${field}Sp`] =
+          newSp;
+      }
+    }
+
+    if (Object.keys(valuesToSet).length > 0) {
+      api.setValues(valuesToSet);
+    }
+  }
+
+  function onItemDeleted() {
+    // Fetch the character record again to get latest data
+    const valuesToSet = {};
+
+    // Get the current ac due to armor and set it on the
+    // record
+    const bestEquippedArmor = getBestEquippedArmor(record);
+
+    // Update attributes as per modifiers
+    updateAttributes(valuesToSet, bestEquippedArmor.highestPenalty);
+
+    valuesToSet["data.headArmor"] = bestEquippedArmor.head[0]?.name || "";
+    valuesToSet["data.headArmorSP"] = bestEquippedArmor.head[0]?.curSp || 0;
+    valuesToSet["data.headArmorPenalty"] =
+      bestEquippedArmor.head[0]?.penalty || 0;
+    valuesToSet["data.bodyArmor"] = bestEquippedArmor.body[0]?.name || "";
+    valuesToSet["data.bodyArmorSP"] = bestEquippedArmor.body[0]?.curSp || 0;
+    valuesToSet["data.bodyArmorPenalty"] =
+      bestEquippedArmor.body[0]?.penalty || 0;
+    valuesToSet["data.shield"] = bestEquippedArmor.shield[0]?.name || "";
+    valuesToSet["data.shieldHP"] = bestEquippedArmor.shield[0]?.curSp || 0;
+    valuesToSet["data.shieldPenalty"] =
+      bestEquippedArmor.shield[0]?.penalty || 0;
+
+    if (Object.keys(valuesToSet).length > 0) {
+      api.setValues(valuesToSet);
+    }
+  }
+
+  function onConditionChange() {
+    const deletedItem = data.deletedItem;
+    if (!deletedItem) return;
+
+    const deletedEffects = deletedItem.data?.effects || [];
+    const recordId = record._id;
+
+    // Update attributes based on modifiers
+    // First update attributes based on modifiers
+    const valuesToSet = {};
+    const bestEquippedArmor = getBestEquippedArmor(record);
+    // Update attributes as per modifiers
+    updateAttributes(valuesToSet, bestEquippedArmor.highestPenalty);
+    valuesToSet["data.headArmor"] = bestEquippedArmor.head[0]?.name || "";
+    valuesToSet["data.headArmorSP"] = bestEquippedArmor.head[0]?.curSp || 0;
+    valuesToSet["data.headArmorPenalty"] =
+      bestEquippedArmor.head[0]?.penalty || 0;
+    valuesToSet["data.bodyArmor"] = bestEquippedArmor.body[0]?.name || "";
+    valuesToSet["data.bodyArmorSP"] = bestEquippedArmor.body[0]?.curSp || 0;
+    valuesToSet["data.bodyArmorPenalty"] =
+      bestEquippedArmor.body[0]?.penalty || 0;
+    valuesToSet["data.shield"] = bestEquippedArmor.shield[0]?.name || "";
+    valuesToSet["data.shieldHP"] = bestEquippedArmor.shield[0]?.curSp || 0;
+    valuesToSet["data.shieldPenalty"] =
+      bestEquippedArmor.shield[0]?.penalty || 0;
+
+    if (Object.keys(valuesToSet).length > 0) {
+      api.setValues(valuesToSet);
+    }
+
+    // Process effects sequentially using a recursive approach
+    function processEffectsSequentially(effects, index) {
+      // Base case: all effects processed
+      if (index >= effects.length) return;
+
+      // Re-query the record to get the latest data
+      api.getRecord("npcs", recordId, (recordUpdated) => {
+        // Process current effect
+        const effect = effects[index];
+        const effectObj = JSON.parse(effect);
+
+        // Remove the effect and wait for completion before processing the next one
+        api.removeEffectById(effectObj._id, recordUpdated, () => {
+          // Process next effect (only after current removal is complete)
+          processEffectsSequentially(effects, index + 1);
+        });
+      });
+    }
+
+    // Start processing from the first effect
+    if (deletedEffects.length > 0) {
+      processEffectsSequentially(deletedEffects, 0);
+    }
+  }
+
+  function onUpdateArmorSp(value) {
+    // Armor SP changes go to head armor too for vehicles (they are the same)
+    const newSp = value;
+    api.setValues({
+      [`data.bodyArmorSP`]: newSp,
+      [`data.baseBodyArmorSp`]: newSp,
+      [`data.headArmorSP`]: newSp,
+    });
+  }
+
+  function canAddVehicleUpgrade() {
+    return value?.data?.type === "vehicle upgrade";
+  }
+
+  function onMaxSdpChange(value) {
+    const newSdp = value;
+    api.setValues({
+      [`data.baseSdp`]: newSdp,
+    });
+  }
+
+  function onCoverHpChange(value) {
+    const newCoverHp = value;
+    api.setValues({
+      [`data.baseCoverHp`]: newCoverHp,
+    });
+  }
+
+  function onSeatsChange(value) {
+    const newSeats = value;
+
+    api.setValues({
+      [`data.baseSeats`]: newSeats,
+    });
+  }
+
+  function performRammingAbility() {
+    const rammingDamage = record.data?.rammingDamage || "6d6";
+
+    const damageMacro = `\`\`\`Roll_Damage
+  // Get the record again and then get the weapon by ID
+  const modifiers = [];
+  const damageMetadata = {
+    rollName: "Damage",
+    tooltip: "Ramming Damage",
+    weaponName: "Ramming",
+    isMelee: true,
+    targetedLocation: "body",
+    nonLethal: false,
+    nonLethalGreaterThanOne: false,
+    noArmorAblation: false,
+    noCriticalInjuries: false,
+  };
+
+  api.promptRoll(
+    "Ramming Damage",
+    '${rammingDamage}',
+    modifiers,
+    damageMetadata,
+    "damage"
+  );
+\`\`\``;
+
+    const evasionMacro = `\`\`\`Roll_Evasion
+  const selectedTokens = api.getSelectedOrDroppedToken();
+  selectedTokens.forEach(token => {
+    // Pass along the total of this roll as the DV for the evasion roll
+    const evasionMetadata = {
+      isDodge: true,
+      dv: 13,
+    };
+
+    performSkillRoll(token, "Evasion", evasionMetadata);
+  });
+\`\`\``;
+
+    const whiplashMacro = `
+\`\`\`Apply_Whiplash
+let targets = api.getSelectedOrDroppedToken();
+
+// If record is not null, check if we're the GM or owner and use it
+if (record) {
+  if (isGM || record?.record?.ownerId === userId) {
+    targets = [record];
+  }
+}
+
+// If we're a player and we did not drop on a record, get our owned tokens
+if (!isGM && targets.length === 0) {
+    targets = api.getSelectedOwnedTokens().map(target => target.token);
+}
+
+// First query the injury record
+api.getRecordByTypeAndName('conditions', 'Whiplash', (injuryRecord) => {
+  if (injuryRecord) {
+    const injuryRecordLink = {
+      value: injuryRecord,
+      tooltip: injuryRecord?.name || "Whiplash",
+    };
+    targets.forEach(target => {
+      addCondition(target, injuryRecordLink, 5);
+    });
+  }
+});
+\`\`\``;
+
+    // Send a message with macros to roll the damage, roll Evasion (DV13), and apply Whiplash
+    const message = `Ramming Attack\n\n---\n\n${damageMacro}
+${evasionMacro}
+${whiplashMacro}
+`;
+
+    api.sendMessage(message, undefined, [], []);
+  }
+
+  function onUseProgram() {
+    let itemDataPath = dataPath.replace(".data.useProgramBtn", "");
+    if (itemDataPath.trim() === "data.useProgramBtn") {
+      itemDataPath = "";
+    }
+    useItem(record, itemDataPath);
+  }
+</script>
+
+<div style="display: flex; margin-top: 4px; flex-direction: row">
+  <div style="display: flex; flex-direction: column; width: 100%">
+    <!-- Top section: Portrait and Stats -->
+    <div style="display: flex; flex-direction: row; gap: 4px">
+      <!-- Left column: Portrait -->
+      <div
+        style="
+          width: 110px;
+          min-width: 110px;
+          max-width: 110px;
+          min-height: 110px;
+          max-height: 110px;
+        "
+      >
+        <portrait width="110px" height="110px" objectfit="contain"></portrait>
+      </div>
+
+      <!-- Right column: Stats in two rows -->
+      <box field="baseStats">
+        <div class="sheet--datapad sheet--datapad--cpr">
+          <div
+            style="
+              display: flex;
+              flex-direction: column;
+              gap: 6px;
+              width: 100%;
+            "
+          >
+            <!-- First row of stats -->
+            <div style="display: flex; flex-direction: row; gap: 6px; width: 100%">
+              <box field="totalInt" style="flex: 1; min-width: 0">
+                <div class="rvtt-cpr-cell">
+                  <div class="rvtt-cpr-cell__fill">
+                    <numberfield
+                      size="xs"
+                      width="100%"
+                      field="totalInt"
+                      label="INT"
+                      defaultvalue="0"
+                      placeholder="0"
+                      onchange="onUpdateStat(value, 'int')"
+                    ></numberfield>
+                  </div>
+                </div>
+              </box>
+              <box field="totalRef" style="flex: 1; min-width: 0">
+                <div class="rvtt-cpr-cell">
+                  <div class="rvtt-cpr-cell__fill">
+                    <numberfield
+                      size="xs"
+                      width="100%"
+                      field="totalRef"
+                      label="REF"
+                      defaultvalue="0"
+                      placeholder="0"
+                      onchange="onUpdateStat(value, 'ref')"
+                    ></numberfield>
+                  </div>
+                </div>
+              </box>
+              <box field="totalDex" style="flex: 1; min-width: 0">
+                <div class="rvtt-cpr-cell">
+                  <div class="rvtt-cpr-cell__fill">
+                    <numberfield
+                      size="xs"
+                      width="100%"
+                      field="totalDex"
+                      label="DEX"
+                      defaultvalue="0"
+                      placeholder="0"
+                      onchange="onUpdateStat(value, 'dex')"
+                    ></numberfield>
+                  </div>
+                </div>
+              </box>
+              <box field="totalTech" style="flex: 1; min-width: 0">
+                <div class="rvtt-cpr-cell">
+                  <div class="rvtt-cpr-cell__fill">
+                    <numberfield
+                      size="xs"
+                      width="100%"
+                      field="totalTech"
+                      label="TECH"
+                      defaultvalue="0"
+                      placeholder="0"
+                      onchange="onUpdateStat(value, 'tech')"
+                    ></numberfield>
+                  </div>
+                </div>
+              </box>
+              <box field="totalCool" style="flex: 1; min-width: 0">
+                <div class="rvtt-cpr-cell">
+                  <div class="rvtt-cpr-cell__fill">
+                    <numberfield
+                      size="xs"
+                      width="100%"
+                      field="totalCool"
+                      label="COOL"
+                      defaultvalue="0"
+                      placeholder="0"
+                      onchange="onUpdateStat(value, 'cool')"
+                    ></numberfield>
+                  </div>
+                </div>
+              </box>
+            </div>
+            <!-- Second row of stats -->
+            <div style="display: flex; flex-direction: row; gap: 6px; width: 100%">
+              <!-- Combat number only for certain types -->
+              <box
+                field="combatNumber"
+                hidden="true"
+                style="flex: 1; min-width: 0"
+              >
+                <div class="rvtt-cpr-cell">
+                  <div class="rvtt-cpr-cell__fill">
+                    <numberfield
+                      size="xs"
+                      width="100%"
+                      field="combatNumber"
+                      label="Combat Number"
+                      defaultvalue="0"
+                      placeholder="0"
+                      hidden="true"
+                    ></numberfield>
+                  </div>
+                </div>
+              </box>
+              <box
+                field="totalInit"
+                hidden="true"
+                style="flex: 1; min-width: 0"
+              >
+                <div class="rvtt-cpr-cell">
+                  <div class="rvtt-cpr-cell__fill">
+                    <numberfield
+                      size="xs"
+                      width="100%"
+                      field="totalInit"
+                      label="INIT"
+                      defaultvalue="0"
+                      placeholder="0"
+                      hidden="true"
+                    ></numberfield>
+                  </div>
+                </div>
+              </box>
+              <box field="totalWill" style="flex: 1; min-width: 0">
+                <div class="rvtt-cpr-cell">
+                  <div class="rvtt-cpr-cell__fill">
+                    <numberfield
+                      size="xs"
+                      width="100%"
+                      field="totalWill"
+                      label="WILL"
+                      defaultvalue="0"
+                      placeholder="0"
+                      onchange="onUpdateStat(value, 'will')"
+                    ></numberfield>
+                  </div>
+                </div>
+              </box>
+              <box field="totalCurLuck" style="flex: 1; min-width: 0">
+                <div class="rvtt-cpr-cell">
+                  <div class="rvtt-cpr-cell__fill">
+                    <numberfield
+                      size="xs"
+                      width="100%"
+                      field="totalCurLuck"
+                      label="LUCK"
+                      defaultvalue="0"
+                      placeholder="-"
+                      onchange="onUpdateStat(value, 'curLuck')"
+                    ></numberfield>
+                  </div>
+                </div>
+              </box>
+              <box field="totalMove" style="flex: 1; min-width: 0">
+                <div class="rvtt-cpr-cell">
+                  <div class="rvtt-cpr-cell__fill">
+                    <numberfield
+                      size="xs"
+                      width="100%"
+                      field="totalMove"
+                      label="MOVE"
+                      defaultvalue="0"
+                      placeholder="0"
+                      onchange="onUpdateStat(value, 'move')"
+                    ></numberfield>
+                  </div>
+                </div>
+              </box>
+              <box field="totalBody" style="flex: 1; min-width: 0">
+                <div class="rvtt-cpr-cell">
+                  <div class="rvtt-cpr-cell__fill">
+                    <numberfield
+                      size="xs"
+                      width="100%"
+                      field="totalBody"
+                      label="BODY"
+                      defaultvalue="0"
+                      placeholder="0"
+                      onchange="onUpdateStat(value, 'body')"
+                    ></numberfield>
+                  </div>
+                </div>
+              </box>
+              <box field="totalCurEmp" style="flex: 1; min-width: 0">
+                <div class="rvtt-cpr-cell">
+                  <div class="rvtt-cpr-cell__fill">
+                    <numberfield
+                      size="xs"
+                      width="100%"
+                      field="totalCurEmp"
+                      label="EMP"
+                      defaultvalue="0"
+                      placeholder="0"
+                      onchange="onUpdateStat(value, 'curEmp')"
+                    ></numberfield>
+                  </div>
+                </div>
+              </box>
+            </div>
+            <numberfield
+              size="xs"
+              width="126px"
+              field="evasion"
+              label="Evasion"
+              description="Set to evasion of controller"
+              defaultvalue="0"
+              placeholder="0"
+              hidden="true"
+            ></numberfield>
+            <box field="environmentalLabel" width="100%" hidden="true">
+              <div
+                style="
+                  display: flex;
+                  flex-direction: row;
+                  gap: 4px;
+                  width: 100%;
+                  height: 110px;
+                  align-items: center;
+                  justify-content: center;
+                "
+              >
+                <label
+                  field="environmentalStatsLabel"
+                  label="Environmental Defenses Have No STATs"
+                  size="xs"
+                  width="100%"
+                  color="dimmed"
+                  textalign="center"
+                ></label>
+              </div>
+            </box>
+          </div>
+        </div>
+      </box>
+      <box field="vehicleBaseProps" width="100%" hidden="true">
+        <div class="sheet--datapad sheet--datapad--cpr">
+          <div
+            style="
+              display: flex;
+              flex-direction: column;
+              gap: 6px;
+              width: 100%;
+            "
+          >
+            <!-- First row: SDP / Max SDP / Armor SP / Cover HP -->
+            <div
+              style="display: flex; flex-direction: row; gap: 6px; width: 100%"
+            >
+              <div class="rvtt-cpr-cell" style="flex: 1; min-width: 0">
+                <div class="rvtt-cpr-cell__fill">
+                  <numberfield
+                    size="xs"
+                    width="100%"
+                    field="curhp"
+                    color="pink"
+                    icon="IconHeart"
+                    label="SDP"
+                    defaultvalue="0"
+                    placeholder="0"
+                  ></numberfield>
+                </div>
+              </div>
+              <div class="rvtt-cpr-cell" style="flex: 1; min-width: 0">
+                <div class="rvtt-cpr-cell__fill">
+                  <numberfield
+                    size="xs"
+                    width="100%"
+                    field="hitpoints"
+                    color="green"
+                    icon="IconHeartFilled"
+                    onchange="onMaxSdpChange(value)"
+                    label="Max SDP"
+                    defaultvalue="0"
+                    placeholder="0"
+                  ></numberfield>
+                </div>
+              </div>
+              <div class="rvtt-cpr-cell" style="flex: 1; min-width: 0">
+                <div class="rvtt-cpr-cell__fill">
+                  <numberfield
+                    size="xs"
+                    width="100%"
+                    field="bodyArmorSP"
+                    color="blue"
+                    label="Armor SP"
+                    icon="IconShieldFilled"
+                    onchange="onUpdateArmorSp(value)"
+                    defaultvalue="0"
+                    placeholder="0"
+                  ></numberfield>
+                </div>
+              </div>
+              <div class="rvtt-cpr-cell" style="flex: 1; min-width: 0">
+                <div class="rvtt-cpr-cell__fill">
+                  <numberfield
+                    size="xs"
+                    width="100%"
+                    field="coverHp"
+                    color="blue"
+                    label="Cover HP"
+                    icon="IconShield"
+                    onchange="onCoverHpChange(value)"
+                    defaultvalue="0"
+                    placeholder="0"
+                  ></numberfield>
+                </div>
+              </div>
+            </div>
+            <!-- Second row: Combat Speed / Seats -->
+            <div
+              style="display: flex; flex-direction: row; gap: 6px; width: 100%"
+            >
+              <div class="rvtt-cpr-cell" style="flex: 1; min-width: 0">
+                <div class="rvtt-cpr-cell__fill">
+                  <numberfield
+                    size="xs"
+                    width="100%"
+                    field="totalMove"
+                    label="Combat Speed (MOVE)"
+                    defaultvalue="0"
+                    placeholder="0"
+                  ></numberfield>
+                </div>
+              </div>
+              <div class="rvtt-cpr-cell" style="flex: 1; min-width: 0">
+                <div class="rvtt-cpr-cell__fill">
+                  <numberfield
+                    size="xs"
+                    width="100%"
+                    field="seats"
+                    label="Seats"
+                    defaultvalue="0"
+                    placeholder="0"
+                    onchange="onSeatsChange(value)"
+                  ></numberfield>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </box>
+      <box field="programBaseProps" width="100%" hidden="true">
+        <div
+          style="
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            width: 100%;
+          "
+        >
+          <div class="sheet--datapad sheet--datapad--cpr">
+            <div
+              style="display: flex; flex-direction: row; gap: 6px; width: 100%"
+            >
+              <box field="per" style="flex: 1; min-width: 0">
+                <div class="rvtt-cpr-cell">
+                  <div class="rvtt-cpr-cell__fill">
+                    <numberfield
+                      size="xs"
+                      width="100%"
+                      field="per"
+                      label="PER"
+                      defaultvalue="0"
+                      placeholder="0"
+                    ></numberfield>
+                  </div>
+                </div>
+              </box>
+              <box field="spd" style="flex: 1; min-width: 0">
+                <div class="rvtt-cpr-cell">
+                  <div class="rvtt-cpr-cell__fill">
+                    <numberfield
+                      size="xs"
+                      width="100%"
+                      field="spd"
+                      label="SPD"
+                      defaultvalue="0"
+                      placeholder="0"
+                    ></numberfield>
+                  </div>
+                </div>
+              </box>
+              <box field="atk" style="flex: 1; min-width: 0">
+                <div class="rvtt-cpr-cell">
+                  <div class="rvtt-cpr-cell__fill">
+                    <numberfield
+                      size="xs"
+                      width="100%"
+                      field="atk"
+                      label="ATK"
+                      defaultvalue="0"
+                      placeholder="0"
+                    ></numberfield>
+                  </div>
+                </div>
+              </box>
+              <box field="def" style="flex: 1; min-width: 0">
+                <div class="rvtt-cpr-cell">
+                  <div class="rvtt-cpr-cell__fill">
+                    <numberfield
+                      size="xs"
+                      width="100%"
+                      field="def"
+                      label="DEF"
+                      defaultvalue="0"
+                      placeholder="0"
+                    ></numberfield>
+                  </div>
+                </div>
+              </box>
+              <box field="interface" style="flex: 1; min-width: 0">
+                <div class="rvtt-cpr-cell">
+                  <div class="rvtt-cpr-cell__fill">
+                    <numberfield
+                      size="xs"
+                      width="100%"
+                      field="interface"
+                      label="Interface"
+                      defaultvalue="0"
+                      placeholder="0"
+                    ></numberfield>
+                  </div>
+                </div>
+              </box>
+              <box field="netActions" style="flex: 1; min-width: 0">
+                <div class="rvtt-cpr-cell">
+                  <div class="rvtt-cpr-cell__fill">
+                    <numberfield
+                      size="xs"
+                      width="100%"
+                      field="netActions"
+                      label="Net Actions"
+                      defaultvalue="0"
+                      placeholder="0"
+                    ></numberfield>
+                  </div>
+                </div>
+              </box>
+              <box field="combatNumber" style="flex: 1; min-width: 0">
+                <div class="rvtt-cpr-cell">
+                  <div class="rvtt-cpr-cell__fill">
+                    <numberfield
+                      size="xs"
+                      width="100%"
+                      field="combatNumber"
+                      label="Combat Number"
+                      defaultvalue="0"
+                      placeholder="0"
+                    ></numberfield>
+                  </div>
+                </div>
+              </box>
+            </div>
+          </div>
+          <div
+            style="display: flex; flex-direction: row; gap: 4px; width: 100%"
+          >
+            <dropdown
+              width="100%"
+              field="programHardwareType"
+              label="Class"
+              size="xs"
+              placeholder="Select Class..."
+              options='[{"label": "Anti-Personnel Attacker", "value": "Anti-Personnel Attacker"}, {"label": "Anti-Program Attacker", "value": "Anti-Program Attacker"}, {"label": "Booster", "value": "Booster"}, {"label": "Defender", "value": "Defender"}]'
+            ></dropdown>
+            <dropdown
+              width="100%"
+              field="blackICEType"
+              label="Class"
+              size="xs"
+              placeholder="Select Class..."
+              options='[{"label": "Anti-Personnel Black ICE", "value": "Anti-Personnel Black ICE"}, {"label": "Anti-Program Black ICE", "value": "Anti-Program Black ICE"}]'
+            ></dropdown>
+            <numberfield
+              width="100%"
+              field="slots"
+              size="xs"
+              label="Slots Required"
+              placeholder="Enter Slots..."
+              minvalue="0"
+            ></numberfield>
+          </div>
+        </div>
+      </box>
+    </div>
+
+    <!-- Bottom section: Type, Size, and Health in two rows -->
+    <div
+      style="
+        display: flex;
+        flex-direction: column;
+        margin-top: 4px;
+        width: 100%;
+      "
+    >
+      <!-- First row: Type and first part of health -->
+      <div style="display: flex; flex-direction: row; gap: 4px; width: 100%">
+        <dropdown
+          size="xs"
+          width="175px"
+          field="type"
+          label="Type"
+          placeholder="NPC Type..."
+          onchange="onTypeChange(value)"
+          options='[{"value": "mook", "label": "Mook"}, {"value": "simple", "label": "Simple"}, {"value": "backup", "label": "Backup"}, {"value": "team member", "label": "Team Member"}, {"value": "vehicle", "label": "Vehicle"}, {"value": "program", "label": "Program"}, {"value": "black ice", "label": "Black ICE"}, {"value": "demon", "label": "Demon"}, {"value": "defense", "label": "Defense"}]'
+        ></dropdown>
+        <box field="healthAndCover" width="100%">
+          <div style="display: flex; flex-direction: row; gap: 4px">
+            <numberfield
+              size="xs"
+              width="100%"
+              field="curhp"
+              color="pink"
+              label="Current HP"
+              icon="IconHeart"
+              defaultvalue="0"
+              placeholder="0"
+            ></numberfield>
+            <numberfield
+              size="xs"
+              width="100%"
+              field="hitpoints"
+              color="green"
+              label="Max HP"
+              icon="IconHeartFilled"
+              defaultvalue="0"
+              placeholder="0"
+            ></numberfield>
+            <numberfield
+              size="xs"
+              width="100%"
+              field="coverHp"
+              color="blue"
+              label="Cover HP"
+              icon="IconShield"
+              defaultvalue="0"
+              placeholder="0"
+            ></numberfield>
+          </div>
+        </box>
+        <box field="vehicleProps" width="100%" hidden="true">
+          <div style="display: flex; flex-direction: row; gap: 4px">
+            <stringfield
+              size="xs"
+              width="100%"
+              field="narrativeSpeed"
+              label="Narrative Speed"
+              placeholder="Narrative Speed..."
+              multiline="true"
+            ></stringfield>
+            <stringfield
+              width="100%"
+              field="cost"
+              label="Cost"
+              placeholder="Enter cost..."
+              size="xs"
+            ></stringfield>
+          </div>
+        </box>
+        <box field="programProps" width="100%" hidden="true">
+          <div
+            style="display: flex; flex-direction: row; gap: 4px; width: 100%"
+          >
+            <numberfield
+              size="xs"
+              width="100%"
+              field="curhp"
+              color="pink"
+              icon="IconHeart"
+              label="REZ"
+              defaultvalue="0"
+              placeholder="0"
+            ></numberfield>
+            <numberfield
+              size="xs"
+              width="100%"
+              field="hitpoints"
+              color="green"
+              icon="IconHeartFilled"
+              onchange="onMaxSdpChange(value)"
+              label="Max REZ"
+              defaultvalue="0"
+              placeholder="0"
+            ></numberfield>
+          </div>
+        </box>
+      </div>
+      <!-- Second row: Size and rest of health fields -->
+      <div
+        style="
+          display: flex;
+          flex-direction: row;
+          gap: 4px;
+          align-items: flex-end;
+        "
+      >
+        <stringfield
+          size="xs"
+          width="200px"
+          field="npcLevel"
+          label="Level"
+          placeholder="Level..."
+        ></stringfield>
+        <dropdown
+          size="xs"
+          width="200px"
+          field="defenseType"
+          label="Defense Type"
+          defaultvalue="active"
+          placeholder="Defense Type..."
+          hidden="true"
+          onchange="onDefenseTypeChange(value)"
+          options='[{"value": "active", "label": "Active"}, {"value": "emplaced", "label": "Emplaced"}, {"value": "environmental", "label": "Environmental"}]'
+        ></dropdown>
+        <numberfield
+          size="xs"
+          width="75px"
+          field="size"
+          label="Size"
+          defaultvalue="1"
+          placeholder="1"
+        ></numberfield>
+        <box field="seriouslyWoundedAndDeathSave" width="100%">
+          <div
+            style="
+              display: flex;
+              flex-direction: row;
+              gap: 4px;
+              align-items: flex-end;
+            "
+          >
+            <numberfield
+              size="xs"
+              width="100%"
+              field="seriouslyWounded"
+              label="Seriously Wounded"
+              icon="IconHeartbeat"
+              defaultvalue="0"
+              placeholder="0"
+            ></numberfield>
+            <numberfield
+              size="xs"
+              width="100%"
+              field="deathSave"
+              label="Death Save"
+              icon="IconSkull"
+              defaultvalue="0"
+              placeholder="0"
+            ></numberfield>
+            <iconbutton
+              field="Roll Death Save"
+              size="md"
+              color="red"
+              variant="light"
+              options='[{"icon": "D10", "label": "Roll Death Save", "value": "roll"}]'
+              onclick="onRollDeathSave()"
+            ></iconbutton>
+          </div>
+        </box>
+        <stringfield
+          size="xs"
+          width="100%"
+          field="manufacturer"
+          label="Manufacturer"
+          placeholder="Enter manufacturer..."
+          multiline="true"
+          hidden="true"
+        ></stringfield>
+        <stringfield
+          size="xs"
+          field="damage"
+          label="Damage"
+          hidden="true"
+          placeholder="Enter damage..."
+        ></stringfield>
+        <stringfield
+          size="xs"
+          field="iceDamage"
+          label="Black ICE Damage"
+          hidden="true"
+          placeholder="Enter Black ICE damage..."
+        ></stringfield>
+        <button
+          size="xs"
+          field="useProgramBtn"
+          label="Use Program"
+          color="primary"
+          hidden="true"
+          variant="light"
+          onclick="onUseProgram()"
+        ></button>
+      </div>
+
+      <!-- Additional fields for vehicles -->
+      <box field="additionalVehicleProps" width="100%" hidden="true">
+        <div style="display: flex; flex-direction: column; gap: 4px">
+          <stringfield
+            size="xs"
+            width="100%"
+            field="powerPlant"
+            label="Power Plant"
+            placeholder="Enter power plant..."
+            multiline="true"
+          ></stringfield>
+          <stringfield
+            size="xs"
+            width="100%"
+            field="operationalRadius"
+            label="Operational Radius"
+            placeholder="Enter operational radius..."
+            multiline="true"
+          ></stringfield>
+          <div style="margin-top: 4px">
+            <label
+              variant="bold"
+              label="Abilities"
+              size="xs"
+              textalign="left"
+            ></label>
+            <div
+              style="
+                display: flex;
+                flex-direction: row;
+                gap: 4px;
+                align-items: flex-end;
+              "
+            >
+              <stringfield
+                size="xs"
+                field="rammingDamage"
+                label="Ramming Damage"
+                defaultvalue="6d6"
+                placeholder="Enter ramming damage..."
+              ></stringfield>
+              <button
+                size="xs"
+                label="Use"
+                variant="light"
+                color="primary"
+                onclick="performRammingAbility();"
+              ></button>
+            </div>
+          </div>
+          <div style="margin-top: 4px">
+            <label
+              variant="bold"
+              label="Upgrades"
+              size="xs"
+              textalign="left"
+            ></label>
+          </div>
+          <list
+            listtype="vehicle_item_list"
+            variant="outline-striped"
+            field="upgrades"
+            emptylisttext="Drag Upgrades Here"
+            allowadd="return canAddVehicleUpgrade();"
+            onchange="onUpgradeChange()"
+          ></list>
+        </div>
+      </box>
+
+      <!-- More fields for programs -->
+      <box field="programUseProps" width="100%" hidden="true">
+        <dropdown
+          width="100%"
+          field="conditions"
+          label="Conditions"
+          description="Conditions that can be applied when used"
+          placeholder="Select Conditions if Applicable..."
+          multiselect="10"
+          optionsquery='{"type": "conditions", "query": {}}'
+        >
+        </dropdown>
+        <dropdown
+          width="100%"
+          field="effects"
+          label="Effects"
+          description="Effects that can be applied when used"
+          placeholder="Select Effects if Applicable..."
+          multiselect="10"
+          optionsquery='{"type": "effects", "query": {}}'
+        >
+        </dropdown>
+      </box>
+
+      <!-- More fields for defenses -->
+      <box field="defenseProps" width="100%" hidden="true">
+        <div
+          style="
+            margin-top: 4px;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+          "
+        >
+          <stringfield
+            size="xs"
+            width="100%"
+            field="defaultTrigger"
+            label="Default Trigger"
+            multiline="true"
+            placeholder="Enter default trigger..."
+          ></stringfield>
+          <stringfield
+            size="xs"
+            width="100%"
+            field="defendedArea"
+            label="Defended Area"
+            multiline="true"
+            placeholder="Enter defended area..."
+          ></stringfield>
+          <stringfield
+            size="xs"
+            width="100%"
+            field="counter"
+            label="Counter"
+            multiline="true"
+            placeholder="Enter counter details..."
+          ></stringfield>
+          <stringfield
+            size="xs"
+            width="100%"
+            field="dataString"
+            label="Data"
+            multiline="true"
+            placeholder="Enter additional data..."
+          ></stringfield>
+        </div>
+      </box>
+
+      <box field="conditionsList" width="100%">
+        <div style="margin-top: 4px">
+          <label
+            variant="bold"
+            label="Critical Injuries"
+            size="xs"
+            textalign="left"
+          ></label>
+          <list
+            listtype="npc_conditions_list"
+            variant="outline"
+            field="criticalInjuries"
+            onchange="onConditionChange()"
+          ></list>
+        </div>
+      </box>
+
+      <!-- ATTACKS for Mooks/Team Members/Backup/Defenses -->
+      <box field="attacks">
+        <div style="margin-top: 4px">
+          <divider color="primary" label="Attacks" textalign="center"></divider>
+        </div>
+
+        <div
+          style="
+            width: 100%;
+            display: flex;
+            flex-direction: row;
+            gap: 4px;
+            align-items: flex-end;
+          "
+        >
+          <!-- Targeted Location and Throw Object Column -->
+          <div style="width: 100%; display: flex; flex-direction: column">
+            <div
+              style="
+                display: flex;
+                flex-direction: row;
+                gap: 4px;
+                align-items: center;
+              "
+            >
+              <label
+                variant="bold"
+                label="Targeted Location"
+                size="sm"
+                textalign="left"
+              ></label>
+              <iconbutton
+                size="md"
+                hidden="false"
+                field="targetedLocation"
+                variant="default"
+                options='[{"icon": "GiChestArmor", "label": "Body", "value": "body"}, 
+        {"icon": "GiHeadshot", "label": "Head", "value": "head"},
+        {"icon": "GiArm", "label": "Hand/Item", "value": "hand"},
+        {"icon": "GiLeg", "label": "Leg", "value": "leg"}]'
+              ></iconbutton>
+              <div
+                style="
+                  display: flex;
+                  flex-direction: row;
+                  margin-left: 8px;
+                  gap: 4px;
+                  align-items: center;
+                "
+              >
+                <label
+                  variant="bold"
+                  label="Dodge Ranged"
+                  size="sm"
+                  textalign="left"
+                ></label>
+                <checkbox
+                  field="dodgeRanged"
+                  editable="true"
+                  size="xs"
+                ></checkbox>
+              </div>
+            </div>
+          </div>
+          <!-- Initiative Button -->
+          <div style="display: flex; justify-content: flex-end">
+            <button
+              field="rollInitBtn"
+              size="xs"
+              icon="D10"
+              label="Initiative"
+              variant="outline"
+              onclick="rollInitiative();"
+            ></button>
+          </div>
+        </div>
+
+        <div
+          style="
+            display: flex;
+            flex-direction: column;
+            margin-top: 8px;
+            flex-grow: 1;
+          "
+        >
+          <div
+            style="display: flex; flex-direction: row; width: 100%; gap: 4px"
+          >
+            <div style="flex-grow: 1">
+              <label
+                variant="bold"
+                label="Weapon"
+                size="xs"
+                textalign="left"
+              ></label>
+            </div>
+            <div style="width: 90px">
+              <label
+                variant="bold"
+                label="Actions"
+                size="xs"
+                textalign="center"
+              ></label>
+            </div>
+            <div style="width: 136px">
+              <label
+                variant="bold"
+                label="Ammo Select"
+                size="xs"
+                textalign="center"
+                width="100%"
+              ></label>
+            </div>
+            <div style="width: 100px">
+              <label
+                variant="bold"
+                label="Ammo / ROF"
+                size="xs"
+                textalign="center"
+                width="100%"
+              ></label>
+            </div>
+          </div>
+
+          <list
+            listtype="attack_list"
+            variant="striped"
+            field="inventory"
+          ></list>
+
+          <!-- Throw Ammo Selector -->
+          <div
+            style="
+              display: flex;
+              flex-direction: row;
+              gap: 4px;
+              align-items: flex-end;
+            "
+          >
+            <dropdown
+              field="throwAmmo"
+              width="120px"
+              size="xs"
+              placeholder="None Selected"
+              optionsFunction="return throwAmmoOptions();"
+              label="Throw Object"
+            ></dropdown>
+            <dropdown
+              field="throwRange"
+              width="120px"
+              size="xs"
+              placeholder="Select Range..."
+              label="Throw Range"
+              options='[{"value": "auto", "label": "Auto"}, {"value": "0to6", "label": "0 to 6 m/yds"}, {"value": "7to12", "label": "7 to 12 m/yds"}, {"value": "13to25", "label": "13 to 25 m/yds"}]'
+            ></dropdown>
+            <button
+              field="throwBtn"
+              size="xs"
+              label="Throw"
+              variant="light"
+              color="secondary"
+              onclick="throwObject();"
+              icon="GiGrenade"
+            ></button>
+
+            <div style="margin-left: auto">
+              <numberfield
+                field="afMultiplier"
+                width="120px"
+                label="Current AF Multiplier"
+                placeholder="Enter Multiplier..."
+                size="xs"
+              ></numberfield>
+            </div>
+          </div>
+
+          <div style="display: flex; margin-top: 8px">
+            <div style="width: 100%">
+              <div>
+                <label
+                  variant="bold"
+                  field="ammoListLabel"
+                  label="Ammo"
+                  size="sm"
+                  textalign="center"
+                ></label>
+              </div>
+
+              <list
+                listtype="ammo_list"
+                variant="striped"
+                field="inventory"
+              ></list>
+            </div>
+            <div style="width: 100%">
+              <div>
+                <label
+                  variant="bold"
+                  field="abilityListLabel"
+                  label="Abilities"
+                  size="sm"
+                  textalign="center"
+                ></label>
+              </div>
+
+              <list
+                listtype="ability_list"
+                variant="striped"
+                field="abilities"
+              ></list>
+            </div>
+          </div>
+        </div>
+      </box>
+
+      <!-- NPC Actions / Ammo (throw/moves/ammo list) -->
+
+      <!-- NPC Skills -->
+      <box field="skillProps" width="100%">
+        <divider
+          color="primary"
+          label="Skill Bases"
+          textalign="center"
+        ></divider>
+        <!-- Popover button to open panel to import skills from statblock -->
+        <popover onclose="importSkills()">
+          <popover.target>
+            <button
+              size="xs"
+              icon="IconPlus"
+              label="Import Skills from Statblock"
+              variant="outline"
+              field="importSkillsBtn"
+              hideonlocked="true"
+            ></button>
+          </popover.target>
+          <popover.dropdown>
+            <div
+              style="
+                display: flex;
+                flex-direction: column;
+                width: 300px;
+                gap: 4px;
+              "
+            >
+              <stringfield
+                size="xs"
+                width="100%"
+                field="skillText"
+                label="Skill List"
+                multiline="true"
+                placeholder="Paste Skill List..."
+              ></stringfield>
+              <button
+                size="xs"
+                label="Import"
+                variant="outline"
+                onclick="clickImportSkills()"
+              ></button>
+            </div>
+          </popover.dropdown>
+        </popover>
+        <div
+          style="
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+            gap: 4px;
+            margin-top: 4px;
+          "
+        >
+          <list
+            listtype="npc_skill_list"
+            variant="outline"
+            field="skills"
+            onchange="onAddDeleteSkill()"
+          ></list>
+        </div>
+      </box>
+
+      <!-- NPC Inventory -->
+      <box field="inventoryProps" width="100%">
+        <divider
+          color="primary"
+          label="Gear & Cyberware"
+          textalign="center"
+        ></divider>
+        <div
+          style="
+            display: flex;
+            flex-direction: row;
+            gap: 4px;
+            justify-content: left;
+            margin-bottom: 4px;
+            align-items: flex-end;
+          "
+        >
+          <numberfield
+            placeholder="0"
+            minvalue="0"
+            size="xs"
+            width="70px"
+            label="Head SP"
+            field="headArmorSP"
+            onchange="onUpdateSp('head')"
+          ></numberfield>
+          <numberfield
+            placeholder="0"
+            minvalue="0"
+            size="xs"
+            label="Body SP"
+            width="70px"
+            field="bodyArmorSP"
+            onchange="onUpdateSp('body')"
+          ></numberfield>
+          <numberfield
+            placeholder="0"
+            minvalue="0"
+            size="xs"
+            width="70px"
+            label="Shield HP"
+            field="shieldHP"
+            onchange="onUpdateSp('shield')"
+          ></numberfield>
+          <iconbutton
+            field="shieldDown"
+            size="md"
+            color="secondary"
+            variant="light"
+            options='[{"icon": "IconShieldDown", "label": "Shield Down", "value": "shieldDown"}, {"icon": "IconShieldCheckFilled", "label": "Shield Up", "value": "shieldUp"}]'
+          ></iconbutton>
+        </div>
+        <list
+          listtype="npc_inventory_list"
+          variant="striped"
+          field="inventory"
+          onchange="onItemDeleted();"
+        ></list>
+      </box>
+
+      <!-- Role Panels -->
+      <box field="rolePanels" hidden="true">
+        <div style="margin-top: 8px">
+          <label
+            variant="bold"
+            label="Role Abilities"
+            size="md"
+            textalign="center"
+          ></label>
+
+          <list
+            listtype="role_panel_list"
+            variant="standard"
+            field="roles"
+            onchange="onRoleDelete();"
+          ></list>
+        </div>
+      </box>
+
+      <!-- Cyberdeck Panels -->
+      <box field="cyberdecks" hidden="true">
+        <div style="margin-top: 8px">
+          <label
+            variant="bold"
+            label="Equipped Cyberdeck"
+            size="md"
+            textalign="center"
+          ></label>
+
+          <list
+            listtype="cyberdeck_panel_list"
+            variant="standard"
+            field="inventory"
+          ></list>
+        </div>
+      </box>
+    </div>
+  </div>
+</div>

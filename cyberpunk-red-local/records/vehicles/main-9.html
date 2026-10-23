@@ -1,0 +1,304 @@
+<script>
+  function performRammingAbility() {
+    const rammingDamage = record.data?.rammingDamage || "6d6";
+
+    const damageMacro = `\`\`\`Roll_Damage
+  const modifiers = [];
+  const damageMetadata = {
+    rollName: "Damage",
+    tooltip: "Ramming Damage",
+    weaponName: "Ramming",
+    isMelee: true,
+    targetedLocation: "body",
+    nonLethal: false,
+    nonLethalGreaterThanOne: false,
+    noArmorAblation: false,
+    noCriticalInjuries: false,
+  };
+
+  api.promptRoll(
+    "Ramming Damage",
+    '${rammingDamage}',
+    modifiers,
+    damageMetadata,
+    "damage"
+  );
+\`\`\``;
+
+    const evasionMacro = `\`\`\`Roll_Evasion
+  const selectedTokens = api.getSelectedOrDroppedToken();
+  selectedTokens.forEach(token => {
+    const evasionMetadata = {
+      isDodge: true,
+      dv: 13,
+    };
+
+    performSkillRoll(token, "Evasion", evasionMetadata);
+  });
+\`\`\``;
+
+    const whiplashMacro = `
+\`\`\`Apply_Whiplash
+let targets = api.getSelectedOrDroppedToken();
+
+if (record) {
+  if (isGM || record?.record?.ownerId === userId) {
+    targets = [record];
+  }
+}
+
+if (!isGM && targets.length === 0) {
+    targets = api.getSelectedOwnedTokens().map(target => target.token);
+}
+
+api.getRecordByTypeAndName('conditions', 'Whiplash', (injuryRecord) => {
+  if (injuryRecord) {
+    const injuryRecordLink = {
+      value: injuryRecord,
+      tooltip: injuryRecord?.name || "Whiplash",
+    };
+    targets.forEach(target => {
+      addCondition(target, injuryRecordLink, 5);
+    });
+  }
+});
+\`\`\``;
+
+    const message = `Ramming Attack\n\n---\n\n${damageMacro}
+${evasionMacro}
+${whiplashMacro}
+`;
+
+    api.sendMessage(message, undefined, [], []);
+  }
+
+  function canAddVehicleUpgrade() {
+    return value?.data?.type === "vehicle upgrade";
+  }
+
+  function onMaxSdpChange(value) {
+    api.setValues({
+      [`data.baseSdp`]: value,
+    });
+  }
+
+  function onCoverHpChange(value) {
+    api.setValues({
+      [`data.baseCoverHp`]: value,
+    });
+  }
+
+  function onSeatsChange(value) {
+    api.setValues({
+      [`data.baseSeats`]: value,
+    });
+  }
+
+  function onUpdateArmorSp(value) {
+    api.setValues({
+      [`data.bodyArmorSP`]: value,
+      [`data.baseBodyArmorSp`]: value,
+      [`data.headArmorSP`]: value,
+    });
+  }
+</script>
+
+<div style="display: flex; margin-top: 4px; flex-direction: row">
+  <div style="display: flex; flex-direction: column; width: 100%">
+    <!-- Top section: Portrait and Vehicle Stats -->
+    <div style="display: flex; flex-direction: row; gap: 4px">
+      <!-- Left column: Portrait -->
+      <div
+        style="
+          width: 110px;
+          min-width: 110px;
+          max-width: 110px;
+          min-height: 110px;
+          max-height: 110px;
+        "
+      >
+        <portrait width="110px" height="110px" objectfit="contain"></portrait>
+      </div>
+
+      <!-- Right column: Vehicle base stats -->
+      <div style="display: flex; flex-direction: column; flex: 1; width: 100%">
+        <div style="display: flex; flex-direction: row; gap: 4px; width: 100%">
+          <numberfield
+            size="xs"
+            width="100%"
+            field="curhp"
+            color="pink"
+            icon="IconHeart"
+            label="SDP"
+            defaultvalue="0"
+            placeholder="0"
+          ></numberfield>
+          <numberfield
+            size="xs"
+            width="100%"
+            field="hitpoints"
+            color="green"
+            icon="IconHeartFilled"
+            onchange="onMaxSdpChange(value)"
+            label="Max SDP"
+            defaultvalue="0"
+            placeholder="0"
+          ></numberfield>
+          <numberfield
+            size="xs"
+            width="100%"
+            field="bodyArmorSP"
+            color="blue"
+            label="Armor SP"
+            icon="IconShieldFilled"
+            onchange="onUpdateArmorSp(value)"
+            defaultvalue="0"
+            placeholder="0"
+          ></numberfield>
+          <numberfield
+            size="xs"
+            width="100%"
+            field="coverHp"
+            color="blue"
+            label="Cover HP"
+            icon="IconShield"
+            onchange="onCoverHpChange(value)"
+            defaultvalue="0"
+            placeholder="0"
+          ></numberfield>
+        </div>
+        <div
+          style="
+            display: flex;
+            flex-direction: row;
+            gap: 4px;
+            width: 100%;
+            align-items: flex-end;
+          "
+        >
+          <numberfield
+            size="xs"
+            field="totalMove"
+            label="Combat Speed (MOVE)"
+            defaultvalue="0"
+            width="100%"
+            placeholder="0"
+          ></numberfield>
+          <numberfield
+            size="xs"
+            field="seats"
+            width="100%"
+            label="Seats"
+            defaultvalue="0"
+            placeholder="0"
+            onchange="onSeatsChange(value)"
+          ></numberfield>
+          <div style="min-width: 50px">
+            <numberfield
+              size="xs"
+              width="100%"
+              field="size"
+              label="Size"
+              defaultvalue="1"
+              placeholder="1"
+            ></numberfield>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Second row: Type info and narrative speed/cost -->
+    <div
+      style="
+        display: flex;
+        flex-direction: row;
+        gap: 4px;
+        margin-top: 4px;
+        width: 100%;
+      "
+    >
+      <stringfield
+        size="xs"
+        width="100%"
+        field="manufacturer"
+        label="Manufacturer"
+        placeholder="Enter manufacturer..."
+        multiline="true"
+      ></stringfield>
+      <stringfield
+        size="xs"
+        width="100%"
+        field="narrativeSpeed"
+        label="Narrative Speed"
+        placeholder="Narrative Speed..."
+        multiline="true"
+      ></stringfield>
+      <stringfield
+        width="100%"
+        field="cost"
+        label="Cost"
+        placeholder="Enter cost..."
+        size="xs"
+      ></stringfield>
+    </div>
+
+    <!-- Additional vehicle properties -->
+    <div
+      style="display: flex; flex-direction: column; gap: 4px; margin-top: 4px"
+    >
+      <stringfield
+        size="xs"
+        width="100%"
+        field="powerPlant"
+        label="Power Plant"
+        placeholder="Enter power plant..."
+        multiline="true"
+      ></stringfield>
+      <stringfield
+        size="xs"
+        width="100%"
+        field="operationalRadius"
+        label="Operational Radius"
+        placeholder="Enter operational radius..."
+        multiline="true"
+      ></stringfield>
+
+      <!-- Ramming ability -->
+      <divider color="primary" label="Abilities" textalign="center"></divider>
+      <div
+        style="
+          display: flex;
+          flex-direction: row;
+          gap: 4px;
+          align-items: flex-end;
+        "
+      >
+        <stringfield
+          size="xs"
+          field="rammingDamage"
+          label="Ramming Damage"
+          defaultvalue="6d6"
+          placeholder="Enter ramming damage..."
+        ></stringfield>
+        <button
+          size="xs"
+          label="Use"
+          variant="light"
+          color="primary"
+          onclick="performRammingAbility()"
+        ></button>
+      </div>
+
+      <!-- Vehicle Upgrades -->
+      <divider color="primary" label="Upgrades" textalign="center"></divider>
+      <list
+        listtype="vehicle_item_list"
+        variant="outline-striped"
+        field="upgrades"
+        emptylisttext="Drag Upgrades Here"
+        allowadd="return canAddVehicleUpgrade();"
+        onchange="onUpgradeChange()"
+      ></list>
+    </div>
+  </div>
+</div>

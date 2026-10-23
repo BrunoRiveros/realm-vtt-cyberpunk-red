@@ -1,0 +1,39 @@
+<script>
+  function onUsedIPChange() {
+    // Total up all the used IP values in the list
+    let usedIP = 0;
+    const usedIPList = record.data.ipSpent || [];
+    usedIPList.forEach((usedEntry) => {
+      const amountUsed = parseInt(usedEntry.data?.usedIP, 10);
+      if (!isNaN(amountUsed) && amountUsed > 0) {
+        usedIP += amountUsed;
+      }
+    });
+
+    api.setValues({ "data.usedIP": usedIP });
+  }
+</script>
+
+<div
+  class="rvtt-cpr-row"
+  style="height: 30px; display: flex; gap: 4px; align-items: center"
+>
+  <div style="flex-grow: 1">
+    <namefield
+      size="xs"
+      variant="standard"
+      placeholder="Entry"
+      field="namefield"
+    ></namefield>
+  </div>
+  <numberfield
+    field="usedIP"
+    label="Amount Used"
+    minvalue="0"
+    size="xs"
+    placeholder="0"
+    width="60px"
+    variant="tooltip"
+    onchange="onUsedIPChange()"
+  ></numberfield>
+</div>

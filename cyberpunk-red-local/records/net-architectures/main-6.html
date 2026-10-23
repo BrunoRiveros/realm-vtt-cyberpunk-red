@@ -1,0 +1,1439 @@
+<script>
+  // ============================================================
+  // Net Architecture — canvas-based editor + viewer
+  //
+  // Data shape (after migration):
+  //   record.data.floors: [
+  //     { _id, name, recordType, data: {
+  //         floor, encounter, dv, hidden, recordLink?,
+  //         branches?: [ { _id, data: { children: [ [...floors], [...floors], ... ] } } ]
+  //     } }
+  //   ]
+  //
+  // Backwards-compat: old documents store `branches[0].data.branch_left` +
+  // `branch_right` instead of `children`. readBranch() normalizes both shapes;
+  // migrateOldShapeIfNeeded() rewrites old docs to the new shape on first paint
+  // so all downstream code only deals with `children`.
+  // ============================================================
+
+  // ---------- Layout constants (world-space) ----------
+  const NODE_W = 240;
+  const NODE_H = 76;
+  const NODE_GAP_V = 38;
+  const NODE_GAP_H = 28;
+  const CELL_W = NODE_W + NODE_GAP_H;
+  const PAD_X = 16;
+  const PAD_Y = 16;
+  const BUTTON_H = 28;
+  const FOOTER_GAP = 8;
+  const SECTION_W = 48; // width of the floor# and DV side sections
+
+  // ---------- Session state ----------
+  function vGet() {
+    return api.getSession("netArchView") || { panX: 0, panY: 0, zoom: 1 };
+  }
+  function vSet(v) {
+    api.setSession("netArchView", v);
+  }
+  function hoverGet() {
+    return api.getSession("netArchHover");
+  }
+  function hoverSet(h) {
+    api.setSession("netArchHover", h);
+  }
+
+  // ---------- View role ----------
+  function isViewerGM() {
+    return typeof isGM !== "undefined" && isGM;
+  }
+
+  function isRecordLocked() {
+    return record?.locked === true;
+  }
+
+  // ---------- rAF chain (declared early so it's defined even if the SES
+  // sandbox runs the script in an order-sensitive way) ----------
+  function netArchFitTick(remaining) {
+    if (remaining <= 0) return;
+    if (!api.getSession("netArchNeedFit")) return;
+    paintArch();
+    api.requestAnimationFrame(`netArchFitTick(${remaining - 1})`);
+  }
+
+  // Player view: hidden floors are dropped from the rendered tree, but we
+  // tag each kept floor with the count of hidden floors that preceded it
+  // (`_hiddenGapBefore`). The layout pass uses that to insert a visual gap
+  // (extra vertical space + no spine edge) so the player can see "something
+  // is here but I can't see it" instead of two visible floors looking like
+  // they're directly connected.
+  function filterForPlayer(floors) {
+    const result = [];
+    let pendingGap = 0;
+    for (const f of floors) {
+      if (f?.data?.hidden === "true") {
+        pendingGap += 1;
+        continue;
+      }
+      const br = readBranch(f);
+      let mapped = f;
+      if (br) {
+        const newChildren = br.children.map(filterForPlayer);
+        const oldBr = f.data?.branches?.[0] || {};
+        const newBr = br.fromOldShape
+          ? {
+              ...oldBr,
+              data: {
+                ...(oldBr.data || {}),
+                branch_left: newChildren[0] || [],
+                branch_right: newChildren[1] || [],
+              },
+            }
+          : {
+              ...oldBr,
+              data: { ...(oldBr.data || {}), children: newChildren },
+            };
+        mapped = {
+          ...f,
+          data: { ...(f.data || {}), branches: [newBr] },
+        };
+      }
+      if (pendingGap > 0) {
+        mapped = { ...mapped, _hiddenGapBefore: pendingGap };
+      }
+      result.push(mapped);
+      pendingGap = 0;
+    }
+    return result;
+  }
+
+  // ---------- Branch normalization (old + new shape) ----------
+  function readBranch(floor) {
+    const branches = floor?.data?.branches;
+    if (!branches || branches.length === 0) return null;
+    const b = branches[0];
+    if (!b) return null;
+    const children = b?.data?.children;
+    if (Array.isArray(children)) {
+      return { id: b._id, children: children, fromOldShape: false };
+    }
+    const left = b?.data?.branch_left;
+    const right = b?.data?.branch_right;
+    if (Array.isArray(left) || Array.isArray(right)) {
+      return {
+        id: b._id,
+        children: [left || [], right || []],
+        fromOldShape: true,
+      };
+    }
+    return null;
+  }
+
+  function childColumnPath(parentFloorPath, columnIndex, fromOldShape) {
+    if (fromOldShape && (columnIndex === 0 || columnIndex === 1)) {
+      const key = columnIndex === 0 ? "branch_left" : "branch_right";
+      return `${parentFloorPath}.data.branches.0.data.${key}`;
+    }
+    return `${parentFloorPath}.data.branches.0.data.children.${columnIndex}`;
+  }
+
+  // One-shot migration: any branch with branch_left/right but no children
+  // gets a children array written. Old keys left in place (harmless once
+  // children exists — readBranch prefers children).
+  function migrateOldShapeIfNeeded() {
+    const updates = {};
+    function walk(floors, basePath) {
+      for (let i = 0; i < floors.length; i++) {
+        const fp = `${basePath}.${i}`;
+        const f = floors[i];
+        const br = f?.data?.branches?.[0];
+        if (br && !Array.isArray(br?.data?.children)) {
+          const left = br?.data?.branch_left;
+          const right = br?.data?.branch_right;
+          if (Array.isArray(left) || Array.isArray(right)) {
+            updates[`${fp}.data.branches.0.data.children`] = [
+              left || [],
+              right || [],
+            ];
+          }
+        }
+        if (Array.isArray(br?.data?.children)) {
+          for (let ci = 0; ci < br.data.children.length; ci++) {
+            walk(
+              br.data.children[ci] || [],
+              `${fp}.data.branches.0.data.children.${ci}`,
+            );
+          }
+        } else if (br) {
+          if (Array.isArray(br?.data?.branch_left)) {
+            walk(br.data.branch_left, `${fp}.data.branches.0.data.branch_left`);
+          }
+          if (Array.isArray(br?.data?.branch_right)) {
+            walk(
+              br.data.branch_right,
+              `${fp}.data.branches.0.data.branch_right`,
+            );
+          }
+        }
+      }
+    }
+    walk(record?.data?.floors || [], "data.floors");
+    if (Object.keys(updates).length > 0) {
+      api.setValues(updates);
+    }
+  }
+
+  // ---------- Layout ----------
+  function subtreeWidth(floors) {
+    let max = 1;
+    for (const f of floors) {
+      const br = readBranch(f);
+      if (br && br.children.length > 0) {
+        let total = 0;
+        for (const ch of br.children) total += subtreeWidth(ch);
+        if (total > max) max = total;
+      }
+    }
+    return max;
+  }
+
+  function buildLayout(gm) {
+    const rawFloors = record?.data?.floors || [];
+    const floors = gm ? rawFloors : filterForPlayer(rawFloors);
+    const out = {
+      nodes: [],
+      edges: [],
+      buttons: [],
+      width: 0,
+      height: 0,
+      gm: gm,
+    };
+
+    if (floors.length === 0) {
+      // Use a world the width of one node card so the empty-state button
+      // sits in the same column the first real floor would occupy. Center
+      // the button horizontally within that world, leave a small vertical
+      // inset. fit (capped at zoom 1.0 in computeFitView) then drops the
+      // whole world neatly into the middle of the canvas at natural size.
+      const buttonW = 160;
+      const worldW = NODE_W + PAD_X * 2;
+      const worldH = BUTTON_H + PAD_Y * 2 + 16;
+      if (gm) {
+        out.buttons.push({
+          kind: "newFloor",
+          parentPath: "data.floors",
+          x: (worldW - buttonW) / 2,
+          y: (worldH - BUTTON_H) / 2,
+          w: buttonW,
+          h: BUTTON_H,
+        });
+      }
+      out.width = worldW;
+      out.height = worldH;
+      return out;
+    }
+
+    const totalCells = subtreeWidth(floors);
+
+    function lay(
+      col,
+      colPath,
+      x0,
+      y0,
+      cells,
+      parentNodeId,
+      parentCenterX,
+      parentBottomY,
+    ) {
+      const centerX = x0 + (cells * CELL_W) / 2;
+      let y = y0;
+      let prevId = null;
+
+      for (let i = 0; i < col.length; i++) {
+        const f = col[i];
+        const path = `${colPath}.${i}`;
+        const id = `f_${path}`;
+        // Player view leaves an empty slot for each hidden floor that
+        // preceded this one, so the column reads as "something is here
+        // but you can't see it" rather than smashing visible neighbors
+        // together. Each missing slot takes the full normal floor pitch.
+        const gapBefore = f?._hiddenGapBefore || 0;
+        if (gapBefore > 0) {
+          y += gapBefore * (NODE_H + NODE_GAP_V);
+        }
+        const nx = centerX - NODE_W / 2;
+        out.nodes.push({
+          id,
+          path,
+          floor: f,
+          kind: "floor",
+          x: nx,
+          y,
+          w: NODE_W,
+          h: NODE_H,
+          centerX,
+          parentArrayPath: colPath,
+          indexInParent: i,
+        });
+        if (prevId && gapBefore === 0) {
+          out.edges.push({ kind: "v", fromId: prevId, toId: id });
+        } else if (!prevId && parentNodeId) {
+          out.edges.push({
+            kind: "fork",
+            fromId: parentNodeId,
+            toId: id,
+            parentCenterX,
+            parentBottomY,
+            childCenterX: centerX,
+            childTopY: y,
+          });
+        }
+        prevId = id;
+        y += NODE_H + NODE_GAP_V;
+      }
+
+      const lastIdx = col.length - 1;
+      const lastPath = `${colPath}.${lastIdx}`;
+      const lastNodeId = `f_${lastPath}`;
+      const lastFloor = col[lastIdx];
+      const lastBottomY = y - NODE_GAP_V;
+
+      const br = readBranch(lastFloor);
+      if (br && br.children.length > 0) {
+        const childWidths = br.children.map(subtreeWidth);
+        const totalCw = childWidths.reduce((a, b) => a + b, 0);
+        const branchPx = totalCw * CELL_W;
+        const allocPx = cells * CELL_W;
+        let bx = x0 + Math.max(0, (allocPx - branchPx) / 2);
+        let maxEndY = y;
+        for (let bi = 0; bi < br.children.length; bi++) {
+          const childFloors = br.children[bi] || [];
+          const cw = childWidths[bi];
+          const cPath = childColumnPath(lastPath, bi, br.fromOldShape);
+          if (childFloors.length === 0) {
+            const cCenter = bx + (cw * CELL_W) / 2;
+            const btnY = y + 4;
+            if (gm) {
+              out.buttons.push({
+                kind: "newFloor",
+                parentPath: cPath,
+                x: cCenter - 80,
+                y: btnY,
+                w: 160,
+                h: BUTTON_H,
+                forkFrom: {
+                  parentCenterX: centerX,
+                  parentBottomY: lastBottomY,
+                  childCenterX: cCenter,
+                  childTopY: btnY,
+                },
+              });
+              maxEndY = Math.max(maxEndY, btnY + BUTTON_H + FOOTER_GAP);
+            }
+          } else {
+            const endY = lay(
+              childFloors,
+              cPath,
+              bx,
+              y,
+              cw,
+              lastNodeId,
+              centerX,
+              lastBottomY,
+            );
+            maxEndY = Math.max(maxEndY, endY);
+          }
+          bx += cw * CELL_W;
+        }
+        y = maxEndY;
+      } else if (gm) {
+        out.buttons.push({
+          kind: "newFloor",
+          parentPath: colPath,
+          x: centerX - 80,
+          y: y + 4,
+          w: 160,
+          h: BUTTON_H,
+          forkFrom: null,
+          spineFromId: lastNodeId,
+          spineFromCenterX: centerX,
+          spineFromBottomY: lastBottomY,
+        });
+        y += BUTTON_H + 8;
+        out.buttons.push({
+          kind: "addBranch",
+          floorPath: lastPath,
+          x: centerX - 80,
+          y: y + 4,
+          w: 160,
+          h: BUTTON_H,
+        });
+        y += BUTTON_H + FOOTER_GAP;
+      }
+
+      return y;
+    }
+
+    out.height =
+      lay(floors, "data.floors", PAD_X, PAD_Y, totalCells, null, null, null) +
+      PAD_Y;
+    out.width = totalCells * CELL_W + PAD_X * 2;
+    return out;
+  }
+
+  // ---------- Coordinate conversion ----------
+  function canvasToWorld(cx, cy, v) {
+    return { x: (cx - v.panX) / v.zoom, y: (cy - v.panY) / v.zoom };
+  }
+
+  function worldRectToScreen(rect, v) {
+    return {
+      x: rect.x * v.zoom + v.panX,
+      y: rect.y * v.zoom + v.panY,
+      w: rect.w * v.zoom,
+      h: rect.h * v.zoom,
+    };
+  }
+
+  // ---------- Paint ----------
+  function paintArch() {
+    const c = api.getCanvas("netArchCanvas");
+    if (!c) return;
+
+    const gm = isViewerGM();
+    const layout = buildLayout(gm);
+
+    // Auto-fit. While the flag is set we refit on every paint where the
+    // canvas has been autosized to a real CSS size (it mounts at the
+    // 300×150 HTML default — fitting then produces a tiny zoom-0.2 view)
+    // AND record data has populated. The flag stays set across paints —
+    // only cleared by user pan/zoom — so subsequent autosize ticks,
+    // recordchange fires, or window resizes all re-fit to the current
+    // state. computeFitView is cheap (a couple of divisions), so paying
+    // it on every paint is fine and means the FINAL stable canvas state
+    // always produces the right fit, regardless of how many intermediate
+    // ticks autosize emits during mount.
+    if (api.getSession("netArchNeedFit") && c.width >= 400 && c.height >= 200) {
+      vSet(computeFitView(c, layout));
+    }
+
+    const v = vGet();
+
+    const colBg = api.getThemeColor("background");
+    const colSurface = api.getThemeColor("surface");
+    const colSurfaceHover = api.getThemeColor("surfaceHover");
+    const colBorder = api.getThemeColor("border");
+    const colText = api.getThemeColor("text");
+    const colDim = api.getThemeColor("textDim");
+    const colPrimary = api.getThemeColor("primary");
+    const colPrimaryContrast = api.getThemeColor("primaryContrast");
+    const colWarning = api.getThemeColor("warning");
+    const colError = api.getThemeColor("error");
+
+    paintBackground(c, { colBg, colPrimary, colBorder });
+
+    c.save();
+    c.translate(v.panX, v.panY);
+    c.scale(v.zoom, v.zoom);
+
+    // Edges first (behind nodes)
+    paintEdges(c, layout, colPrimary);
+
+    // Empty-branch fork lines for buttons-with-forks
+    for (const btn of layout.buttons) {
+      if (btn.forkFrom) {
+        paintForkEdge(c, btn.forkFrom, colPrimary);
+      }
+      if (btn.spineFromBottomY != null) {
+        c.setStrokeStyle(colPrimary);
+        c.setLineWidth(1.5);
+        c.beginPath();
+        c.moveTo(btn.spineFromCenterX, btn.spineFromBottomY);
+        c.lineTo(btn.spineFromCenterX, btn.y);
+        c.stroke();
+      }
+    }
+
+    // Nodes
+    const hover = hoverGet();
+    for (const node of layout.nodes) {
+      paintNode(
+        c,
+        node,
+        {
+          colSurface,
+          colSurfaceHover,
+          colBorder,
+          colText,
+          colDim,
+          colPrimary,
+          colError,
+          colWarning,
+        },
+        hover,
+        gm,
+      );
+    }
+
+    // Buttons (GM only — filtered upstream in buildLayout)
+    for (const btn of layout.buttons) {
+      paintButton(
+        c,
+        btn,
+        {
+          colSurface,
+          colSurfaceHover,
+          colBorder,
+          colPrimary,
+          colPrimaryContrast,
+          colText,
+          colDim,
+        },
+        hover,
+      );
+    }
+
+    c.restore();
+
+    // Overlay fields (screen-space). GM gets editable overlays; players see
+    // read-only canvas-drawn text painted inside the node above. Font size
+    // tracks zoom linearly with no minimum — the canvas labels also scale,
+    // so clamping the overlay font would make text appear oversized relative
+    // to its cell at low zoom and visibly overflow.
+    c.clearOverlayFields();
+    if (gm) {
+      const fontSize = Math.max(6, Math.round(12 * v.zoom));
+      for (const node of layout.nodes) {
+        registerNodeOverlays(c, node, v, fontSize);
+      }
+    }
+  }
+
+  function paintBackground(c, colors) {
+    // Base fill
+    c.setFillStyle(colors.colBg);
+    c.fillRect(0, 0, c.width, c.height);
+
+    // Faint circuit-board grid in primary accent. Painted in screen space
+    // (before the pan/zoom transform applies) so the backdrop reads as a
+    // fixed substrate rather than something that moves with the world.
+    c.save();
+    c.setStrokeStyle(colors.colPrimary);
+    c.setLineWidth(0.75);
+    c.setGlobalAlpha(0.14);
+    c.beginPath();
+    const step = 32;
+    for (let x = 0; x <= c.width; x += step) {
+      c.moveTo(x + 0.5, 0);
+      c.lineTo(x + 0.5, c.height);
+    }
+    for (let y = 0; y <= c.height; y += step) {
+      c.moveTo(0, y + 0.5);
+      c.lineTo(c.width, y + 0.5);
+    }
+    c.stroke();
+    c.restore();
+
+    // Brighter dots at every 4th grid intersection for a tech-mesh feel.
+    c.save();
+    c.setFillStyle(colors.colPrimary);
+    c.setGlobalAlpha(0.32);
+    const major = step * 4;
+    for (let x = major; x < c.width; x += major) {
+      for (let y = major; y < c.height; y += major) {
+        c.beginPath();
+        c.arc(x, y, 1.8, 0, Math.PI * 2);
+        c.fill();
+      }
+    }
+    c.restore();
+  }
+
+  // Chamfered "cyberpunk" hex card — top-left and bottom-right corners cut
+  // at 45° so the shape reads as a cut data tile rather than a soft card.
+  function nodeHexPath(c, x, y, w, h, chamfer) {
+    c.beginPath();
+    c.moveTo(x + chamfer, y);
+    c.lineTo(x + w, y);
+    c.lineTo(x + w, y + h - chamfer);
+    c.lineTo(x + w - chamfer, y + h);
+    c.lineTo(x, y + h);
+    c.lineTo(x, y + chamfer);
+    c.closePath();
+  }
+
+  function drawArrowDown(c, x, y, size) {
+    c.beginPath();
+    c.moveTo(x - size, y - size);
+    c.lineTo(x, y);
+    c.lineTo(x + size, y - size);
+    c.stroke();
+  }
+
+  function paintEdges(c, layout, colPrimary) {
+    c.setStrokeStyle(colPrimary);
+    c.setLineWidth(1.5);
+    const nodeById = {};
+    for (const n of layout.nodes) nodeById[n.id] = n;
+    for (const e of layout.edges) {
+      const from = nodeById[e.fromId];
+      const to = nodeById[e.toId];
+      if (!from || !to) continue;
+      if (e.kind === "v") {
+        const x = from.x + from.w / 2;
+        c.beginPath();
+        c.moveTo(x, from.y + from.h);
+        c.lineTo(x, to.y);
+        c.stroke();
+        drawArrowDown(c, x, to.y, 5);
+      } else if (e.kind === "fork") {
+        paintForkEdge(
+          c,
+          {
+            parentCenterX: e.parentCenterX,
+            parentBottomY: e.parentBottomY,
+            childCenterX: e.childCenterX,
+            childTopY: e.childTopY,
+          },
+          colPrimary,
+        );
+      }
+    }
+  }
+
+  function paintForkEdge(c, info, colPrimary) {
+    c.setStrokeStyle(colPrimary);
+    c.setLineWidth(1.5);
+    const midY = info.parentBottomY + (info.childTopY - info.parentBottomY) / 2;
+    c.beginPath();
+    c.moveTo(info.parentCenterX, info.parentBottomY);
+    c.lineTo(info.parentCenterX, midY);
+    c.lineTo(info.childCenterX, midY);
+    c.lineTo(info.childCenterX, info.childTopY);
+    c.stroke();
+    drawArrowDown(c, info.childCenterX, info.childTopY, 5);
+  }
+
+  function paintNode(c, node, colors, hover, gm) {
+    const { x, y, w, h, floor } = node;
+    const hovered = hover && hover.kind === "floor" && hover.id === node.id;
+    const hiddenFlag = floor?.data?.hidden === "true";
+
+    // Card — chamfered hex shape, filled then stroked. Stroke uses primary
+    // (neon accent) for the default outline so the tile reads as cyberpunk
+    // even without a drop-hover state; drop-hover bumps the width.
+    const isDropTarget =
+      hover && hover.kind === "dropTarget" && hover.id === node.id;
+    nodeHexPath(c, x, y, w, h, 14);
+    c.setFillStyle(hovered ? colors.colSurfaceHover : colors.colSurface);
+    c.fill();
+    c.setStrokeStyle(colors.colPrimary);
+    c.setLineWidth(isDropTarget ? 2.5 : 1.5);
+    c.stroke();
+
+    // Vertical dividers between sections
+    const floorW = SECTION_W;
+    const dvW = SECTION_W;
+    c.setStrokeStyle(colors.colBorder);
+    c.setLineWidth(1);
+    c.beginPath();
+    c.moveTo(x + floorW, y + 8);
+    c.lineTo(x + floorW, y + h - 8);
+    c.moveTo(x + w - dvW, y + 8);
+    c.lineTo(x + w - dvW, y + h - 8);
+    c.stroke();
+
+    // Labels
+    c.setFillStyle(colors.colDim);
+    c.setFont("9px sans-serif");
+    c.setTextAlign("center");
+    c.setTextBaseline("top");
+    c.fillText("Floor", x + floorW / 2, y + 6);
+    c.fillText("Encounter", x + w / 2, y + 6);
+    c.fillText("DV", x + w - dvW / 2, y + 6);
+
+    // Eye toggle (top-right of card) — GM only
+    if (gm) {
+      const eyeX = x + w - dvW - 18;
+      const eyeY = y + 8;
+      const eyeHovered =
+        hover && hover.kind === "nodeEye" && hover.id === node.id;
+      drawEyeIcon(c, eyeX, eyeY, hiddenFlag, colors, eyeHovered);
+
+      // Trash gutter (outside card, right side) — hidden on locked records
+      if (!isRecordLocked()) {
+        const trashHovered =
+          hover && hover.kind === "nodeTrash" && hover.id === node.id;
+        drawTrashIcon(c, x + w + 8, y + h - 18, colors, trashHovered);
+      }
+    }
+
+    // Record link chip (if linked) — drawn on canvas in the encounter area
+    const rl = floor?.data?.recordLink;
+    if (rl && rl.value) {
+      drawRecordChip(c, x + floorW + 8, y + h - 26, rl, colors, gm);
+    }
+
+    // Player view: canvas-draw the floor #, encounter, DV values since no
+    // overlay fields are registered. GM view leaves the cells blank for the
+    // overlay inputs to fill in.
+    if (!gm) {
+      c.setFillStyle(colors.colText);
+      c.setTextBaseline("middle");
+      c.setTextAlign("center");
+      c.setFont("12px sans-serif");
+      const floorLabel = floor?.data?.floor || "";
+      const encounterLabel = floor?.data?.encounter || "";
+      const dvVal = floor?.data?.dv;
+      const dvLabel = dvVal == null || dvVal === "" ? "-" : String(dvVal);
+      c.fillText(floorLabel, x + floorW / 2, y + h / 2 + 6);
+      c.fillText(dvLabel, x + w - dvW / 2, y + h / 2 + 6);
+      // Encounter — wrap to fit
+      const encX = x + floorW;
+      const encW = w - floorW - dvW;
+      const encCenterY = y + h / 2 + 6;
+      const chipOffset = rl && rl.value ? -10 : 0;
+      const lines = wrapText(c, encounterLabel, encW - 16, 2);
+      for (let i = 0; i < lines.length; i++) {
+        c.fillText(
+          lines[i],
+          encX + encW / 2,
+          encCenterY + chipOffset + (i - (lines.length - 1) / 2) * 14,
+        );
+      }
+    }
+  }
+
+  function wrapText(c, text, maxW, maxLines) {
+    if (!text) return [];
+    const words = text.split(/\s+/);
+    const lines = [];
+    let line = "";
+    for (const w of words) {
+      const test = line ? line + " " + w : w;
+      if (c.measureText(test).width > maxW && line) {
+        lines.push(line);
+        line = w;
+        if (lines.length >= maxLines) break;
+      } else {
+        line = test;
+      }
+    }
+    if (line && lines.length < maxLines) lines.push(line);
+    if (lines.length >= maxLines && c.measureText(text).width > maxW) {
+      const last = lines[lines.length - 1];
+      let trimmed = last;
+      while (trimmed.length > 0 && c.measureText(trimmed + "…").width > maxW) {
+        trimmed = trimmed.slice(0, -1);
+      }
+      lines[lines.length - 1] = trimmed + "…";
+    }
+    return lines;
+  }
+
+  function drawEyeIcon(c, x, y, hidden, colors, hovered) {
+    // Hover halo: a soft cyan disc behind the icon. Signals "this is
+    // clickable" without changing the icon's semantic color (warning/dim
+    // still tell you whether the floor is currently visible to players).
+    if (hovered) {
+      c.save();
+      c.setFillStyle(colors.colPrimary);
+      c.setGlobalAlpha(0.22);
+      c.beginPath();
+      c.arc(x + 7, y + 7, 12, 0, Math.PI * 2);
+      c.fill();
+      c.restore();
+    }
+    const stroke = hovered
+      ? colors.colWarning
+      : hidden
+        ? colors.colDim
+        : colors.colWarning;
+    c.setStrokeStyle(stroke);
+    c.setLineWidth(hovered ? 1.7 : 1.4);
+    c.beginPath();
+    c.ellipse(x + 7, y + 7, 7, 4, 0, 0, Math.PI * 2);
+    c.stroke();
+    c.setFillStyle(stroke);
+    c.beginPath();
+    c.arc(x + 7, y + 7, 1.6, 0, Math.PI * 2);
+    c.fill();
+    if (hidden) {
+      c.setStrokeStyle(hovered ? colors.colWarning : colors.colDim);
+      c.setLineWidth(hovered ? 1.7 : 1.4);
+      c.beginPath();
+      c.moveTo(x, y + 14);
+      c.lineTo(x + 14, y);
+      c.stroke();
+    }
+  }
+
+  function drawTrashIcon(c, x, y, colors, hovered) {
+    // Hover halo: red disc behind the icon, signalling "destructive
+    // action on click."
+    if (hovered) {
+      c.save();
+      c.setFillStyle(colors.colError);
+      c.setGlobalAlpha(0.28);
+      c.beginPath();
+      c.arc(x + 6, y + 6, 12, 0, Math.PI * 2);
+      c.fill();
+      c.restore();
+    }
+    c.setStrokeStyle(colors.colError);
+    c.setLineWidth(hovered ? 1.7 : 1.3);
+    c.beginPath();
+    // Lid
+    c.moveTo(x - 2, y);
+    c.lineTo(x + 14, y);
+    // Handle
+    c.moveTo(x + 4, y);
+    c.lineTo(x + 4, y - 2);
+    c.lineTo(x + 8, y - 2);
+    c.lineTo(x + 8, y);
+    // Body
+    c.moveTo(x, y);
+    c.lineTo(x + 2, y + 12);
+    c.lineTo(x + 10, y + 12);
+    c.lineTo(x + 12, y);
+    c.stroke();
+  }
+
+  function drawRecordChip(c, x, y, rl, colors, gm) {
+    const label = rl.value?.name || rl.tooltip || "Record";
+    c.setFont("11px sans-serif");
+    c.setTextBaseline("middle");
+    c.setTextAlign("left");
+    const tw = c.measureText(label).width;
+    const chipPadLeft = gm ? 16 : 8;
+    const chipW = Math.min(140, tw + chipPadLeft + 8);
+    const chipH = 18;
+    c.setFillStyle(colors.colPrimary);
+    c.beginPath();
+    if (c.roundRect) {
+      c.roundRect(x, y, chipW, chipH, 9);
+    } else {
+      c.rect(x, y, chipW, chipH);
+    }
+    c.fill();
+    // X mark (GM only — player can't unlink)
+    if (gm) {
+      c.setStrokeStyle("#ffffff");
+      c.setLineWidth(1.2);
+      c.beginPath();
+      c.moveTo(x + 5, y + 5);
+      c.lineTo(x + 11, y + 13);
+      c.moveTo(x + 11, y + 5);
+      c.lineTo(x + 5, y + 13);
+      c.stroke();
+    }
+    // Label
+    c.setFillStyle("#ffffff");
+    c.fillText(label, x + chipPadLeft, y + chipH / 2);
+  }
+
+  function paintButton(c, btn, colors, hover) {
+    const hovered =
+      hover && hover.kind === "button" && hover.btnId === buttonId(btn);
+    nodeHexPath(c, btn.x, btn.y, btn.w, btn.h, 8);
+    c.setFillStyle(hovered ? colors.colPrimary : colors.colSurface);
+    c.fill();
+    c.setStrokeStyle(colors.colPrimary);
+    c.setLineWidth(1.2);
+    c.stroke();
+
+    c.setFillStyle(hovered ? colors.colPrimaryContrast : colors.colPrimary);
+    c.setFont("12px sans-serif");
+    c.setTextAlign("center");
+    c.setTextBaseline("middle");
+    const label = btn.kind === "newFloor" ? "+ New Floor" : "+ Add Branch";
+    c.fillText(label, btn.x + btn.w / 2, btn.y + btn.h / 2);
+  }
+
+  function buttonId(btn) {
+    if (btn.kind === "newFloor") return `nf_${btn.parentPath}`;
+    if (btn.kind === "addBranch") return `ab_${btn.floorPath}`;
+    return "?";
+  }
+
+  // ---------- Overlay fields ----------
+  // Only registered for GM viewers (player view canvas-draws read-only text).
+  function registerNodeOverlays(c, node, v, fontSize) {
+    const { floor, path, x, y, w, h } = node;
+    const floorW = SECTION_W;
+    const dvW = SECTION_W;
+    const fontStyle = `font-size: ${fontSize}px`;
+
+    // Sections start just below the canvas-drawn labels (y+6..15ish) with
+    // a small gap, and run to the card bottom less a small bottom inset.
+    const overlayTop = 18;
+    const overlayBot = 6;
+
+    // Floor # — left section
+    c.overlayField(
+      worldRectToScreen(
+        {
+          x: x + 4,
+          y: y + overlayTop,
+          w: floorW - 8,
+          h: h - overlayTop - overlayBot,
+        },
+        v,
+      ),
+      `${path}.data.floor`,
+      {
+        type: "string",
+        variant: "unstyled",
+        textAlign: "center",
+        style: fontStyle,
+      },
+    );
+
+    // Encounter — middle section. When a record is linked, reserve the
+    // bottom strip of the cell for the canvas-drawn chip so the textarea
+    // doesn't overlap it.
+    const rl = floor?.data?.recordLink;
+    const chipReserve = rl && rl.value ? 22 : 0;
+    c.overlayField(
+      worldRectToScreen(
+        {
+          x: x + floorW + 4,
+          y: y + overlayTop,
+          w: w - floorW - dvW - 8,
+          h: h - overlayTop - overlayBot - chipReserve,
+        },
+        v,
+      ),
+      `${path}.data.encounter`,
+      {
+        type: "string",
+        variant: "unstyled",
+        textAlign: "center",
+        placeholder: "Type or drag a record…",
+        style: fontStyle,
+      },
+    );
+
+    // DV — right section
+    c.overlayField(
+      worldRectToScreen(
+        {
+          x: x + w - dvW + 4,
+          y: y + overlayTop,
+          w: dvW - 8,
+          h: h - overlayTop - overlayBot,
+        },
+        v,
+      ),
+      `${path}.data.dv`,
+      {
+        type: "number",
+        variant: "unstyled",
+        textAlign: "center",
+        hideControls: true,
+        placeholder: "-",
+        style: fontStyle,
+      },
+    );
+  }
+
+  // ---------- Hit testing ----------
+  function hitTestWorld(wx, wy, layout) {
+    // Buttons first (since they may overlap node footers)
+    for (const btn of layout.buttons) {
+      if (
+        wx >= btn.x &&
+        wx <= btn.x + btn.w &&
+        wy >= btn.y &&
+        wy <= btn.y + btn.h
+      ) {
+        return { kind: "button", btn };
+      }
+    }
+    // Nodes — eye, trash, chip-X, body
+    for (const node of layout.nodes) {
+      const { x, y, w, h, floor } = node;
+      const dvW = 48;
+      const floorW = 48;
+      // Eye
+      const eyeX = x + w - dvW - 18;
+      const eyeY = y + 8;
+      if (wx >= eyeX && wx <= eyeX + 14 && wy >= eyeY && wy <= eyeY + 14) {
+        return { kind: "nodeEye", node };
+      }
+      // Trash (outside card, right gutter) — only when unlocked
+      if (!isRecordLocked()) {
+        const trashX = x + w + 8;
+        const trashY = y + h - 18;
+        if (
+          wx >= trashX - 4 &&
+          wx <= trashX + 14 &&
+          wy >= trashY - 4 &&
+          wy <= trashY + 14
+        ) {
+          return { kind: "nodeTrash", node };
+        }
+      }
+      // Record chip X
+      const rl = floor?.data?.recordLink;
+      if (rl && rl.value) {
+        const cx = x + floorW + 8;
+        const cy = y + h - 26;
+        if (wx >= cx && wx <= cx + 18 && wy >= cy && wy <= cy + 18) {
+          return { kind: "chipX", node };
+        }
+        // Chip body — open record
+        if (wx >= cx + 18 && wx <= cx + 140 && wy >= cy && wy <= cy + 18) {
+          return { kind: "chipOpen", node };
+        }
+      }
+      // Node body
+      if (wx >= x && wx <= x + w && wy >= y && wy <= y + h) {
+        return { kind: "floor", id: node.id, node };
+      }
+    }
+    return null;
+  }
+
+  // ---------- Mouse handlers ----------
+  function onCanvasMove() {
+    const v = vGet();
+    if (event.dragging) {
+      // User is panning — they own the view from now on. Stop auto-fitting.
+      api.removeSession("netArchNeedFit");
+      const dx = event.x - event.lastX;
+      const dy = event.y - event.lastY;
+      vSet({ panX: v.panX + dx, panY: v.panY + dy, zoom: v.zoom });
+      paintArch();
+      return;
+    }
+    const wp = canvasToWorld(event.x, event.y, v);
+    const layout = buildLayout(isViewerGM());
+    const hit = hitTestWorld(wp.x, wp.y, layout);
+    const prev = hoverGet();
+    const next = hit
+      ? hit.kind === "button"
+        ? { kind: "button", btnId: buttonId(hit.btn) }
+        : hit.kind === "floor"
+          ? { kind: "dropTarget", id: hit.id }
+          : { kind: hit.kind, id: hit.node?.id }
+      : null;
+    if (!sameHover(prev, next)) {
+      hoverSet(next);
+      paintArch();
+    }
+  }
+
+  function sameHover(a, b) {
+    if (!a && !b) return true;
+    if (!a || !b) return false;
+    return a.kind === b.kind && a.id === b.id && a.btnId === b.btnId;
+  }
+
+  function onCanvasLeave() {
+    if (hoverGet()) {
+      hoverSet(null);
+      paintArch();
+    }
+  }
+
+  function onCanvasUp() {
+    const dx = event.x - event.dragStartX;
+    const dy = event.y - event.dragStartY;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+    if (dist < 4) {
+      handleCanvasClick(event.x, event.y);
+    }
+  }
+
+  function onCanvasClick() {
+    // No-op — mouseup with drag-distance check handles clicks so pans don't
+    // trigger spurious clicks.
+  }
+
+  function onCanvasDown() {
+    // No-op — the host's drag tracker needs an onmousedown handler attached
+    // for `event.dragging` to read true in subsequent mousemove events.
+    // Pan logic lives in onCanvasMove; this just turns drag tracking on.
+  }
+
+  function onCanvasWheel() {
+    // Zoom around the cursor position. Clears the auto-fit flag — the user
+    // is taking control of the view.
+    api.removeSession("netArchNeedFit");
+    const v = vGet();
+    const factor = event.deltaY > 0 ? 0.9 : 1.1;
+    const newZoom = Math.max(0.2, Math.min(2.5, v.zoom * factor));
+    const cx = event.x;
+    const cy = event.y;
+    const newPanX = cx - ((cx - v.panX) / v.zoom) * newZoom;
+    const newPanY = cy - ((cy - v.panY) / v.zoom) * newZoom;
+    vSet({ panX: newPanX, panY: newPanY, zoom: newZoom });
+    paintArch();
+  }
+
+  function handleCanvasClick(cx, cy) {
+    const gm = isViewerGM();
+    const v = vGet();
+    const wp = canvasToWorld(cx, cy, v);
+    const layout = buildLayout(gm);
+    const hit = hitTestWorld(wp.x, wp.y, layout);
+    if (!hit) return;
+
+    if (hit.kind === "chipOpen") {
+      const rl = hit.node.floor?.data?.recordLink;
+      if (rl?.value) {
+        api.openRecord(rl.value);
+      }
+      return;
+    }
+    if (!gm) return;
+
+    if (hit.kind === "button") {
+      if (hit.btn.kind === "newFloor") {
+        addFloorToColumn(hit.btn.parentPath);
+      } else if (hit.btn.kind === "addBranch") {
+        addBranchToFloor(hit.btn.floorPath);
+      }
+      return;
+    }
+    if (hit.kind === "nodeEye") {
+      toggleFloorHidden(hit.node);
+      return;
+    }
+    if (hit.kind === "nodeTrash") {
+      deleteFloor(hit.node);
+      return;
+    }
+    if (hit.kind === "chipX") {
+      clearFloorRecordLink(hit.node);
+      return;
+    }
+  }
+
+  // ---------- Mutations ----------
+  function addFloorToColumn(parentArrayPath) {
+    // If we're adding the very first floor to a previously-empty arch,
+    // re-arm fit so the new floor lands centered. The world dimensions
+    // change significantly between the empty-state placeholder and a
+    // real one-floor layout, so the empty-state fit view doesn't
+    // line up with the new content.
+    if (parentArrayPath === "data.floors") {
+      const parent = api.getValue(parentArrayPath) || [];
+      if (parent.length === 0) {
+        api.setSession("netArchNeedFit", true);
+      }
+    }
+    const newFloor = {
+      _id: generateUuid(),
+      name: "Floor",
+      unidentifiedName: "Floor",
+      recordType: "records",
+      identified: true,
+      data: {
+        hidden: "true",
+        floor: "",
+        encounter: "",
+        dv: null,
+      },
+    };
+    api.addValue(parentArrayPath, newFloor);
+  }
+
+  function addBranchToFloor(floorPath) {
+    const branch = {
+      _id: generateUuid(),
+      data: { children: [[], []] },
+    };
+    api.setValues({
+      [`${floorPath}.data.branches`]: [branch],
+    });
+  }
+
+  function toggleFloorHidden(node) {
+    const cur = node.floor?.data?.hidden === "true";
+    api.setValue(`${node.path}.data.hidden`, cur ? "false" : "true");
+  }
+
+  function deleteFloor(node) {
+    // Remove from its parent array via splice
+    const parent = api.getValue(node.parentArrayPath) || [];
+    const next = parent.slice();
+    next.splice(node.indexInParent, 1);
+    api.setValues({ [node.parentArrayPath]: next });
+  }
+
+  function clearFloorRecordLink(node) {
+    api.setValues({
+      [`${node.path}.data.recordLink`]: null,
+    });
+  }
+
+  // ---------- Drop targeting ----------
+  // Record-window onDrop fires when the user releases a drag anywhere on this
+  // record. Hover state is kept fresh by onCanvasMove (mousemove fires during
+  // drag in standard browser behavior), so we can route the drop to whichever
+  // floor was under the cursor. Demon drops fall through to the legacy handler
+  // when no floor is hovered.
+  function onDrop(type, recordLink) {
+    const gm = isViewerGM();
+    if (gm) {
+      const hover = hoverGet();
+      if (
+        hover &&
+        (hover.kind === "dropTarget" || hover.kind === "floor") &&
+        hover.id
+      ) {
+        const layout = buildLayout(true);
+        const node = layout.nodes.find((n) => n.id === hover.id);
+        if (node) {
+          api.setRecordLink(`${node.path}.data.recordLink`, recordLink);
+          return;
+        }
+      }
+    }
+    const value = recordLink?.value;
+    if (type === "npcs" && value?.data?.type === "demon") {
+      onDemonDrop(value);
+    }
+  }
+
+  function onDemonDrop(rec) {
+    const itemToAdd = {
+      ...rec,
+      _id: generateUuid(),
+      icon: "IconRobot",
+      data: {
+        ...rec?.data,
+        fromId: rec._id,
+      },
+      fields: {
+        ...rec?.fields,
+      },
+    };
+    api.addValue(`data.installedDemons`, itemToAdd);
+  }
+
+  // ---------- Toolbar ----------
+  // Fit computes a zoom that makes the whole tree fit inside the current
+  // canvas viewport (with a small inset) and centers it. Falls back to a
+  // plain pan/zoom reset if the layout has no measurable size yet.
+  function computeFitView(c, layout) {
+    const contentW = Math.max(1, layout.width);
+    const contentH = Math.max(1, layout.height);
+    const inset = 20;
+    const availW = Math.max(1, c.width - inset * 2);
+    const availH = Math.max(1, c.height - inset * 2);
+    const fitZoom = Math.min(availW / contentW, availH / contentH);
+    // Min 0.2 so wide trees actually fit (clamping at 0.4 was leaving large
+    // architectures still overflowing horizontally; users read "overflowing"
+    // as "not fitted" even though it's the fit math hitting the clamp).
+    // Max 1.0 so small content (one floor, the empty-arch button) doesn't
+    // get blown up to fill the canvas — it sits at natural size, centered.
+    const zoom = Math.max(0.2, Math.min(1.0, fitZoom));
+    const panX = (c.width - contentW * zoom) / 2;
+    const panY = (c.height - contentH * zoom) / 2;
+    return { panX, panY, zoom };
+  }
+
+  function onResetView() {
+    // Re-arm auto-fit. paintArch fits immediately (canvas and data are
+    // real here since the user is clicking the button). The flag stays
+    // set until the user pans/zooms, so any subsequent resize also refits.
+    //
+    // Note: we deliberately DON'T schedule a rAF chain here. The button's
+    // onclick runs in its own SES compartment (`data.button.js`), and
+    // api.requestAnimationFrame called from there registers the callback
+    // against the button's compartment — netArchFitTick isn't visible
+    // there, so the rAF would throw. The flag-based per-paint refit
+    // handles everything we'd need a chain for anyway.
+    api.setSession("netArchNeedFit", true);
+    paintArch();
+  }
+
+  function onZoomIn() {
+    api.removeSession("netArchNeedFit");
+    const v = vGet();
+    const c = api.getCanvas("netArchCanvas");
+    const cx = c ? c.width / 2 : 0;
+    const cy = c ? c.height / 2 : 0;
+    const newZoom = Math.min(2.5, v.zoom * 1.2);
+    const newPanX = cx - ((cx - v.panX) / v.zoom) * newZoom;
+    const newPanY = cy - ((cy - v.panY) / v.zoom) * newZoom;
+    vSet({ panX: newPanX, panY: newPanY, zoom: newZoom });
+    paintArch();
+  }
+
+  function onZoomOut() {
+    api.removeSession("netArchNeedFit");
+    const v = vGet();
+    const c = api.getCanvas("netArchCanvas");
+    const cx = c ? c.width / 2 : 0;
+    const cy = c ? c.height / 2 : 0;
+    const newZoom = Math.max(0.4, v.zoom * 0.83);
+    const newPanX = cx - ((cx - v.panX) / v.zoom) * newZoom;
+    const newPanY = cy - ((cy - v.panY) / v.zoom) * newZoom;
+    vSet({ panX: newPanX, panY: newPanY, zoom: newZoom });
+    paintArch();
+  }
+
+  // ---------- Show/Hide all (preserved from prior behavior) ----------
+  function onShowHideAllFloors() {
+    const floors = record?.data?.floors || [];
+    if (!floors || floors.length === 0) return;
+    const firstFloor = floors[0];
+    const hiddenValue = firstFloor?.data?.hidden === "true";
+    const newHiddenValue = (!hiddenValue).toString();
+    const valuesToSet = {};
+
+    function processFloors(arr, basePath) {
+      arr.forEach((floor, index) => {
+        valuesToSet[`${basePath}${index}.data.hidden`] = newHiddenValue;
+        const branches = floor?.data?.branches || [];
+        branches.forEach((branch, branchIndex) => {
+          const children = branch?.data?.children;
+          if (Array.isArray(children)) {
+            children.forEach((col, ci) => {
+              processFloors(
+                col || [],
+                `${basePath}${index}.data.branches.${branchIndex}.data.children.${ci}.`,
+              );
+            });
+          } else {
+            const leftBranch = branch?.data?.branch_left || [];
+            processFloors(
+              leftBranch,
+              `${basePath}${index}.data.branches.${branchIndex}.data.branch_left.`,
+            );
+            const rightBranch = branch?.data?.branch_right || [];
+            processFloors(
+              rightBranch,
+              `${basePath}${index}.data.branches.${branchIndex}.data.branch_right.`,
+            );
+          }
+        });
+      });
+    }
+
+    processFloors(floors, "data.floors.");
+    api.setValues(valuesToSet);
+  }
+
+  // ---------- Lifecycle ----------
+  function onArchLoad() {
+    if (isViewerGM()) migrateOldShapeIfNeeded();
+    // Auto-fit on load. paintArch's fit logic waits for the canvas to be
+    // autosized to a real CSS size (the canvas mounts at the HTML 300×150
+    // default) and for record data to populate. The rAF chain re-triggers
+    // paint over the next ~30 frames so we converge regardless of what
+    // order autosize / recordchange / etc. fire in.
+    api.setSession("netArchNeedFit", true);
+    api.removeSession("netArchFitWaited");
+    paintArch();
+    api.requestAnimationFrame("netArchFitTick(30)");
+  }
+
+  function onArchRecordChange() {
+    paintArch();
+  }
+</script>
+
+<div
+  style="
+    display: flex;
+    flex-direction: column;
+    height: calc(100% + 12px);
+    margin-bottom: -12px;
+    min-height: 0;
+    gap: 4px;
+  "
+>
+  <div style="flex: none; margin-top: 8px">
+    <label
+      variant="bold"
+      label="Installed Demons"
+      size="md"
+      textalign="center"
+    ></label>
+
+    <list
+      listtype="installed_demon_list"
+      variant="outline-striped"
+      field="installedDemons"
+    ></list>
+  </div>
+
+  <div style="flex: none">
+    <divider color="primary" label="Floors"></divider>
+  </div>
+
+  <div
+    style="
+      flex: none;
+      display: flex;
+      flex-direction: row;
+      gap: 4px;
+      align-items: center;
+    "
+  >
+    <button
+      variant="outline"
+      size="xs"
+      icon="IconFocusCentered"
+      label="Fit"
+      onclick="onResetView()"
+    ></button>
+    <button
+      variant="outline"
+      size="xs"
+      label="Zoom In"
+      icon="IconZoomIn"
+      onclick="onZoomIn()"
+    ></button>
+    <button
+      variant="outline"
+      size="xs"
+      label="Zoom Out"
+      icon="IconZoomOut"
+      onclick="onZoomOut()"
+    ></button>
+    <div style="flex: 1"></div>
+    <button
+      variant="outline"
+      size="xs"
+      label="Show/Hide All Floors"
+      hideforplayers="true"
+      onclick="onShowHideAllFloors()"
+    ></button>
+  </div>
+
+  <div
+    style="
+      flex: 1 1 0;
+      min-height: 0;
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+    "
+  >
+    <canvas
+      field="netArchCanvas"
+      autosize="true"
+      style="
+        height: 100%;
+        width: 100%;
+        display: block;
+        cursor: default;
+        border-radius: 4px;
+      "
+      onload="onArchLoad()"
+      onresize="paintArch()"
+      onrecordchange="onArchRecordChange()"
+      onmousedown="onCanvasDown()"
+      onmousemove="onCanvasMove()"
+      onmouseup="onCanvasUp()"
+      onmouseleave="onCanvasLeave()"
+      onclick="onCanvasClick()"
+      onwheel="onCanvasWheel()"
+    ></canvas>
+  </div>
+</div>

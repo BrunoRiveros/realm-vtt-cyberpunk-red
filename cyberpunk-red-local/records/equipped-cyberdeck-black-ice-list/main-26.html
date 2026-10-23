@@ -1,0 +1,38 @@
+<script>
+  function useBlackICE(value) {
+    const itemDataPath = dataPath.replace(".data.useIceBtn", "");
+    useItem(record, itemDataPath);
+  }
+</script>
+
+<div style="height: 30px; display: flex; gap: 4px; align-items: center">
+  <div style="width: 30px; min-width: 30px">
+    <portrait width="30px" height="30px" name="portrait"></portrait>
+  </div>
+  <div style="width: 100px">
+    <stringfield
+      size="xs"
+      variant="tooltip-underline"
+      label="Class"
+      field="blackICEType"
+      placeholder="Class"
+      editable="false"
+    ></stringfield>
+  </div>
+  <div style="flex-grow: 1">
+    <namefield
+      size="xs"
+      variant="tooltip-underline"
+      label="Name"
+      placeholder="Item"
+      field="namefield"
+    />
+  </div>
+  <button
+    field="useIceBtn"
+    size="xs"
+    variant="light"
+    label="Use"
+    onclick="useBlackICE(value);"
+  ></button>
+</div>

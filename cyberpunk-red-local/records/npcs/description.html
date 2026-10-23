@@ -1,0 +1,113 @@
+<script>
+  function onRollLoyalty() {
+    // Loyalty is just a d6 rolling under the loyalty stat
+    const loyalty = record.data?.loyalty || 0;
+    const loyaltyMetadata = {
+      dv: loyalty,
+    };
+    api.promptRoll("Loyalty", "1d6", [], loyaltyMetadata, "loyalty");
+  }
+
+  function onLoad() {
+    // If the record is a program, show modifiers
+    if (
+      record.data?.type === "program" &&
+      (record.fields?.modifiersBox?.hidden === undefined ||
+        record.fields?.modifiersBox?.hidden === true)
+    ) {
+      api.setHidden("modifiersBox", false);
+    } else if (
+      record.data?.type !== "program" &&
+      record.fields?.modifiersBox?.hidden === false
+    ) {
+      api.setHidden("modifiersBox", true);
+    }
+  }
+</script>
+<label
+  variant="bold"
+  field="additionalInfoLabel"
+  textalign="center"
+  label="Additional Info"
+></label>
+
+<div style="display: flex; flex-direction: row; gap: 4px">
+  <numberfield
+    size="xs"
+    width="100px"
+    field="reputation"
+    label="Reputation"
+    defaultvalue="0"
+  ></numberfield>
+  <box field="teamMemberLoyalty" hidden="true">
+    <div
+      style="
+        display: flex;
+        flex-direction: row;
+        gap: 4px;
+        align-items: flex-end;
+      "
+    >
+      <numberfield
+        size="xs"
+        width="100px"
+        field="loyalty"
+        label="Loyalty"
+        defaultvalue="0"
+      ></numberfield>
+      <iconbutton
+        field="Roll Loyalty"
+        size="md"
+        variant="light"
+        options='[{"icon": "IconDice", "label": "Roll Loyalty", "value": "roll"}]'
+        onclick="onRollLoyalty()"
+      ></iconbutton>
+    </div>
+  </box>
+</div>
+
+<div>
+  <label variant="bold" textalign="center" label="Description"></label>
+</div>
+
+<div>
+  <richtextfield
+    field="notes"
+    placeholder="Enter description..."
+  ></richtextfield>
+</div>
+
+<box field="modifiersBox" hidden="true">
+  <div style="margin-top: 4px">
+    <label
+      label="Modifiers"
+      size="md"
+      variant="bold"
+      textalign="center"
+    ></label>
+    <label
+      label="Modifiers applied when active in Cyberdeck"
+      size="sm"
+      textalign="center"
+      color="dark.2"
+    ></label>
+  </div>
+
+  <label
+    hidewhenidentified="true"
+    label="Item Unidentified"
+    size="sm"
+    textalign="center"
+  ></label>
+
+  <div style="width: 100%">
+    <list
+      hidewhenidentified="false"
+      listtype="modifier_list"
+      field="modifiers"
+      variant="striped"
+      allowadd=""
+      onload="onLoad();"
+    ></list>
+  </div>
+</box>

@@ -1,0 +1,1359 @@
+<script>
+  function onLoad() {
+    // If we don't have skills added yet, we need to add the default skill groups and skills
+    const skillGroups1 = record?.data?.skillGroups1 || [];
+    const skillGroups2 = record?.data?.skillGroups2 || [];
+    if (skillGroups1.length === 0 && skillGroups2.length === 0) {
+      const allSkills = getAllSkills();
+
+      // Build the complete skill structure upfront
+      const valuesToSet = {};
+
+      // Group skills by their groupField
+      const skillGroups1Data = [];
+      const skillGroups2Data = [];
+
+      allSkills.forEach((skillGroup) => {
+        const groupData = {
+          _id: generateUuid(),
+          name: skillGroup.groupName,
+          unidentifiedName: skillGroup.groupName,
+          recordType: "records",
+          identified: true,
+          data: {
+            skills: skillGroup.skills.map((skill) => {
+              let statToCheck = skill.stat;
+              if (statToCheck === "emp") {
+                statToCheck = "curEmp";
+              } else if (statToCheck === "luck") {
+                statToCheck = "curLuck";
+              }
+              const statValue = record.data?.[statToCheck] || 0;
+
+              return {
+                _id: generateUuid(),
+                name: skill.name,
+                unidentifiedName: skill.name,
+                recordType: "skill",
+                identified: true,
+                icon: "IconTools",
+                data: {
+                  stat: skill.stat,
+                  isDefault: skill.isDefault,
+                  isTimesTwo: skill.isTimesTwo,
+                  hasSubskills: skill.hasSubskills,
+                  lvl: !skill.hasSubskills
+                    ? skill.isDefault
+                      ? 2
+                      : 0
+                    : undefined,
+                  base: !skill.hasSubskills
+                    ? skill.isDefault
+                      ? 2 + statValue
+                      : statValue
+                    : undefined,
+                  subSkills: skill.hasSubskills
+                    ? skill.subSkills.map((subSkill) => {
+                        return {
+                          _id: generateUuid(),
+                          name: subSkill.name,
+                          unidentifiedName: subSkill.name,
+                          data: {
+                            stat: skill.stat,
+                            isDefault: subSkill.isDefault,
+                            isTimesTwo: skill.isTimesTwo,
+                            lvl: subSkill.isDefault ? 2 : 0,
+                            base: subSkill.isDefault
+                              ? 2 + statValue
+                              : statValue,
+                            hasSubskills: false,
+                          },
+                          fields: {
+                            name: {
+                              hidden: !subSkill.isDefault,
+                            },
+                            namefield: {
+                              hidden: subSkill.isDefault,
+                            },
+                          },
+                        };
+                      })
+                    : [],
+                },
+                fields: {
+                  name: {
+                    hidden: !skill.isDefault,
+                  },
+                  stat: {
+                    hidden: skill.hasSubskills,
+                  },
+                  base: {
+                    hidden: skill.hasSubskills,
+                  },
+                  lvl: {
+                    hidden: skill.hasSubskills,
+                  },
+                  rollSkill: {
+                    hidden: skill.hasSubskills,
+                  },
+                  namefield: {
+                    hidden: skill.isDefault,
+                  },
+                  subSkills: {
+                    hidden: !skill.hasSubskills,
+                  },
+                },
+              };
+            }),
+          },
+        };
+
+        // Add to the appropriate group array
+        if (skillGroup.groupField === "skillGroups1") {
+          skillGroups1Data.push(groupData);
+        } else if (skillGroup.groupField === "skillGroups2") {
+          skillGroups2Data.push(groupData);
+        }
+      });
+
+      // Set both skill groups at once
+      valuesToSet["data.skillGroups1"] = skillGroups1Data;
+      valuesToSet["data.skillGroups2"] = skillGroups2Data;
+
+      api.setValues(valuesToSet);
+    }
+  }
+
+  function onDrop(type, recordLink) {
+    if (type === "roles") {
+      onDropRole(recordLink);
+    } else if (type === "conditions") {
+      onDropCondition(recordLink);
+    }
+  }
+
+  function onDropRole(recordLink) {
+    addRole(record, recordLink);
+  }
+
+  function onRoleDelete() {
+    updateRoles(record);
+  }
+
+  function onDropCondition(recordLink) {
+    addCondition(record, recordLink);
+  }
+
+  function onUpdateStat(value, stat) {
+    const bestEquippedArmor = getBestEquippedArmor(record);
+    const penalty = bestEquippedArmor.highestPenalty;
+    setStatsAndSkills(record, value, stat, null, penalty, true);
+  }
+
+  function onConditionChange() {
+    const deletedItem = data.deletedItem;
+    if (!deletedItem) return;
+
+    const deletedEffects = deletedItem.data?.effects || [];
+    const recordId = record._id;
+
+    // Update attributes based on modifiers
+    // First update attributes based on modifiers
+    const valuesToSet = {};
+    const bestEquippedArmor = getBestEquippedArmor(record);
+    // Update attributes as per modifiers
+    updateAttributes(valuesToSet, bestEquippedArmor.highestPenalty);
+    valuesToSet["data.headArmor"] = bestEquippedArmor.head[0]?.name || "";
+    valuesToSet["data.headArmorSP"] = bestEquippedArmor.head[0]?.curSp || 0;
+    valuesToSet["data.headArmorPenalty"] =
+      bestEquippedArmor.head[0]?.penalty || 0;
+    valuesToSet["data.bodyArmor"] = bestEquippedArmor.body[0]?.name || "";
+    valuesToSet["data.bodyArmorSP"] = bestEquippedArmor.body[0]?.curSp || 0;
+    valuesToSet["data.bodyArmorPenalty"] =
+      bestEquippedArmor.body[0]?.penalty || 0;
+    valuesToSet["data.shield"] = bestEquippedArmor.shield[0]?.name || "";
+    valuesToSet["data.shieldHP"] = bestEquippedArmor.shield[0]?.curSp || 0;
+    valuesToSet["data.shieldPenalty"] =
+      bestEquippedArmor.shield[0]?.penalty || 0;
+
+    if (Object.keys(valuesToSet).length > 0) {
+      api.setValues(valuesToSet);
+    }
+
+    // Process effects sequentially using a recursive approach
+    function processEffectsSequentially(effects, index) {
+      // Base case: all effects processed
+      if (index >= effects.length) return;
+
+      // Re-query the record to get the latest data
+      api.getRecord("characters", recordId, (recordUpdated) => {
+        // Process current effect
+        const effect = effects[index];
+        const effectObj = JSON.parse(effect);
+
+        // Remove the effect and wait for completion before processing the next one
+        api.removeEffectById(effectObj._id, recordUpdated, () => {
+          // Process next effect (only after current removal is complete)
+          processEffectsSequentially(effects, index + 1);
+        });
+      });
+    }
+
+    // Start processing from the first effect
+    if (deletedEffects.length > 0) {
+      processEffectsSequentially(deletedEffects, 0);
+    }
+  }
+
+  function useLuck() {
+    // Close the popover to trigger the onUseLuck function.
+    api.closeOpenedPopovers();
+  }
+
+  function onUseLuck() {
+    // First re-query the record, in case we're in the middle of updating
+    // on blur of the useLuck field.
+    const recordId = record._id;
+    // First, wait for the useLuck field to be updated, then re-query the record.
+    api.getRecord("characters", recordId, (record) => {
+      const useLuck = record.data?.useLuck || 0;
+
+      const valuesToSet = {
+        "data.useLuck": 0,
+      };
+
+      if (useLuck > 0) {
+        // Deduct the amount from curLuck, and add store the amount deducted
+        // so we can add it as a bonus to the next roll
+        const curLuck = record.data?.curLuck || 0;
+        const amountDeducted = Math.min(useLuck, curLuck);
+        valuesToSet["data.curLuck"] = curLuck - amountDeducted;
+        valuesToSet["data.nextRoll"] =
+          (record.data?.nextRoll || 0) + amountDeducted;
+
+        const tags = [
+          {
+            tooltip: "Used luck.",
+            name: "Luck",
+          },
+        ];
+
+        api.setValues(valuesToSet);
+
+        if (amountDeducted > 0) {
+          api.sendMessage(
+            `${amountDeducted} Luck used. Next roll will be at +${valuesToSet["data.nextRoll"]}`,
+            undefined,
+            [],
+            tags,
+          );
+        }
+      }
+    });
+  }
+
+  function onRest() {
+    // Get modifiers for healing
+    const healingModifiers = getEffectsAndModifiersForToken(
+      record,
+      "healingBonus",
+    );
+    let healingBonus = healingModifiers.reduce(
+      (acc, mod) => acc + mod.value,
+      0,
+    );
+    healingBonus = parseInt(healingBonus || "0", 10);
+
+    //  Recover up to BODY hp + any modifiers for healing
+    // Use actualBody where we track the actual value used for HP
+    const body = record.data?.actualBody || 0;
+    const healingAmount = body + healingBonus;
+    const curhp = record.data?.curhp || 0;
+    const hitpoints = record.data?.hitpoints || 0;
+    const newHp = Math.min(curhp + healingAmount, hitpoints);
+
+    const valuesToSet = {
+      "data.curhp": newHp,
+      "data.deathSave": body,
+    };
+
+    // Go through each effect, look up the item with that ID in inventory, and heal it by the value of the effect
+    const inventory = record.data?.inventory || [];
+    let healedArmor = [];
+    const bestArmor = getBestEquippedArmor(record);
+    inventory.forEach((item, itemIndex) => {
+      // Check for healCurrentSp effects for this item
+      const healCurrentSpEffects = getEffectsAndModifiersForToken(
+        record,
+        ["healCurrentSp"],
+        "",
+        item._id,
+      );
+      if (healCurrentSpEffects.length > 0) {
+        healCurrentSpEffects.forEach((effect) => {
+          if (effect.itemId === item._id) {
+            let maxSp = item.data?.armorSp;
+            let maxHeadSp = maxSp;
+            let maxBodySp = maxSp;
+            let maxShieldSp = maxSp;
+            // Some items define SP in a modifier, so check that here too
+            const modifiers = item.data?.modifiers || [];
+            modifiers.forEach((modifier) => {
+              if (
+                modifier.data?.type === "headSp" ||
+                modifier.data?.type === "bodySp" ||
+                modifier.data?.type === "shieldSp"
+              ) {
+                const modValue = parseInt(modifier.data?.value, 10);
+                if (modifier.data?.type === "headSp") {
+                  maxHeadSp = modValue;
+                  if (maxSp === undefined) {
+                    maxSp = modValue;
+                  }
+                } else if (modifier.data?.type === "bodySp") {
+                  maxBodySp = modValue;
+                  if (maxSp === undefined) {
+                    maxSp = modValue;
+                  }
+                } else if (modifier.data?.type === "shieldSp") {
+                  maxShieldSp = modValue;
+                  if (maxSp === undefined) {
+                    maxSp = modValue;
+                  }
+                }
+              }
+            });
+            let curHeadSp =
+              item.data?.curheadSp !== undefined
+                ? parseInt(item.data?.curheadSp, 10)
+                : maxHeadSp;
+            let curBodySp =
+              item.data?.curbodySp !== undefined
+                ? parseInt(item.data?.curbodySp, 10)
+                : maxBodySp;
+            let curShieldSp =
+              item.data?.curshieldSp !== undefined
+                ? parseInt(item.data?.curshieldSp, 10)
+                : maxShieldSp;
+            if (isNaN(curHeadSp)) {
+              curHeadSp = Math.max(maxHeadSp, maxSp);
+            }
+            if (isNaN(curBodySp)) {
+              curBodySp = Math.max(maxBodySp, maxSp);
+            }
+            if (isNaN(curShieldSp)) {
+              curShieldSp = Math.max(maxShieldSp, maxSp);
+            }
+
+            const spHealAmount = effect.value;
+            const newHeadSp = Math.min(maxHeadSp, curHeadSp + spHealAmount);
+            const newBodySp = Math.min(maxBodySp, curBodySp + spHealAmount);
+            const newShieldSp = Math.min(
+              maxShieldSp,
+              curShieldSp + spHealAmount,
+            );
+
+            // If this is cyberware, set all SP to the same value else just set the ones that are different
+            if (item.data?.type === "cyberware") {
+              valuesToSet[`data.inventory.${itemIndex}.data.curheadSp`] =
+                newHeadSp;
+              valuesToSet[`data.inventory.${itemIndex}.data.curbodySp`] =
+                newBodySp;
+              valuesToSet[`data.inventory.${itemIndex}.data.curshieldSp`] =
+                newShieldSp;
+            } else if (item.data?.armorLocation === "head") {
+              valuesToSet[`data.inventory.${itemIndex}.data.curheadSp`] =
+                newHeadSp;
+            } else if (item.data?.armorLocation === "body") {
+              valuesToSet[`data.inventory.${itemIndex}.data.curbodySp`] =
+                newBodySp;
+            } else if (item.data?.armorLocation === "shield") {
+              valuesToSet[`data.inventory.${itemIndex}.data.curshieldSp`] =
+                newShieldSp;
+            }
+
+            if (newHeadSp - curHeadSp > 0) {
+              healedArmor.push({
+                name: item.name,
+                amount: newHeadSp - curHeadSp,
+              });
+            }
+            // If this is the same armor as what we're showing on the character, update the attributes
+            if (item._id === bestArmor.head?.[0]?._id) {
+              valuesToSet["data.headArmorSP"] = newHeadSp;
+            }
+            if (item._id === bestArmor.body?.[0]?._id) {
+              valuesToSet["data.bodyArmorSP"] = newBodySp;
+            }
+            if (item._id === bestArmor.shield?.[0]?._id) {
+              valuesToSet["data.shieldSP"] = newShieldSp;
+            }
+          }
+        });
+      }
+    });
+
+    api.setValues(valuesToSet, (record) => {
+      // Remove any effects for Mortally Wounded or Death Save Penalties
+      const effects = record?.effects || [];
+      const deathSavePenaltyEffect = effects.find(
+        (effect) => effect.name === "Death Save Penalty",
+      );
+      const mortallyWoundedEffect = effects.find(
+        (effect) => effect.name === "Mortally Wounded",
+      );
+
+      if (deathSavePenaltyEffect || mortallyWoundedEffect) {
+        const tokenForRecord = api.getToken() || record;
+
+        // Function to remove Mortally Wounded effect
+        const removeMortallyWounded = (currentRecord) => {
+          const currentMortallyWoundedEffect = currentRecord?.effects?.find(
+            (effect) => effect.name === "Mortally Wounded",
+          );
+
+          if (currentMortallyWoundedEffect) {
+            const tokenForRecord = api.getToken() || currentRecord;
+
+            api.removeEffectById(
+              currentMortallyWoundedEffect._id,
+              tokenForRecord,
+            );
+          }
+        };
+
+        // First remove Death Save Penalty if it exists, then remove Mortally Wounded
+        if (deathSavePenaltyEffect) {
+          api.removeEffectById(
+            deathSavePenaltyEffect._id,
+            tokenForRecord,
+            (updatedRecord) => {
+              removeMortallyWounded(updatedRecord);
+            },
+          );
+        } else {
+          // Only remove Mortally Wounded
+          removeMortallyWounded(tokenForRecord);
+        }
+      }
+    });
+
+    let message = "Resting for the day.";
+    if (healingAmount > 0) {
+      message += ` Recovered ${healingAmount} HP.`;
+    }
+    if (healingBonus > 0) {
+      message += ` Healing bonus: ${healingBonus}.`;
+    }
+
+    if (healedArmor.length > 0) {
+      message += ` Healed ${healedArmor
+        .map((armor) => `${armor.name} by ${armor.amount}`)
+        .join(". ")}.`;
+    }
+
+    api.sendMessage(message, undefined, [], []);
+  }
+
+  function onResetLuck() {
+    api.setValues({
+      "data.useLuck": 0,
+      "data.curLuck": record.data?.luck || 0,
+      "data.nextRoll": 0,
+    });
+  }
+
+  function onRollDeathSave() {
+    // Death save is just a d10 rolling under the body stat
+    // Use actualBody where we track the actual value used for HP and Death Saves
+    const body = record.data?.actualBody || 0;
+    const deathSaveMetadata = {
+      dv: body,
+    };
+    api.promptRoll("Death Save", "1d10", [], deathSaveMetadata, "deathSave");
+  }
+
+  function onUpdateSp(field) {
+    const newSp = value;
+    // Update the SP on the item that represents the armor
+    const equippedArmor = getBestEquippedArmor(record);
+    const armor = equippedArmor[field]?.[0];
+    let valuesToSet = {};
+    if (armor) {
+      // Find the index directly by searching through the inventory array
+      const inventoryArray = record?.data?.inventory || [];
+      const armorItemIndex = inventoryArray.findIndex(
+        (item) => item._id === armor._id,
+      );
+
+      if (armorItemIndex !== -1) {
+        valuesToSet[`data.inventory.${armorItemIndex}.data.cur${field}Sp`] =
+          newSp;
+      }
+    }
+
+    if (Object.keys(valuesToSet).length > 0) {
+      api.setValues(valuesToSet);
+    }
+  }
+
+  function onUpdatePenalty(field) {
+    // Update the penalty on the item that represents the armor and re-update attributes
+    const newPenalty = value;
+    // Update the SP on the item that represents the armor
+    const equippedArmor = getBestEquippedArmor(record);
+    const armor = equippedArmor[field]?.[0];
+    let valuesToSet = {};
+    if (armor) {
+      // Find the index directly by searching through the inventory array
+      const inventoryArray = record?.data?.inventory || [];
+      const armorItemIndex = inventoryArray.findIndex(
+        (item) => item._id === armor._id,
+      );
+      if (armorItemIndex !== -1) {
+        valuesToSet[`data.inventory.${armorItemIndex}.data.penalty`] =
+          newPenalty;
+      }
+    }
+
+    if (Object.keys(valuesToSet).length > 0) {
+      api.setValues(valuesToSet, (record) => {
+        const bestEquippedArmor = getBestEquippedArmor(record);
+        // Update attributes as per modifiers
+        updateAttributes(valuesToSet, bestEquippedArmor.highestPenalty);
+        api.setValues(valuesToSet);
+      });
+    }
+  }
+</script>
+
+<!-- Compact one-page Cyberpunk RED main tab: original two-column layout
+     (stats column + details column), no section frames/dividers/headers.
+     Keeps the datapad stat-cell styling and shows the character name. -->
+<div
+  class="sheet--datapad sheet--datapad--cpr"
+  style="display: flex; flex-direction: row; gap: 8px; margin-top: 4px"
+>
+  <!-- ===== STATS COLUMN ===== -->
+  <div
+    style="
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      width: 90px;
+      min-width: 90px;
+    "
+  >
+    <!-- INT -->
+    <div class="rvtt-cpr-cell">
+      <div class="rvtt-cpr-cell__fill">
+        <numberfield
+          placeholder="0"
+          size="xs"
+          width="100%"
+          hidecontrols="true"
+          field="int"
+          hideonlocked="true"
+          label="INT"
+          textalign="center"
+          minvalue="0"
+          onchange="onUpdateStat(value, 'int')"
+          onload="onLoad()"
+        ></numberfield>
+        <numberfield
+          placeholder="0"
+          size="xs"
+          width="100%"
+          hidecontrols="true"
+          field="totalInt"
+          hideonlocked="false"
+          label="INT"
+          textalign="center"
+          minvalue="0"
+        ></numberfield>
+      </div>
+    </div>
+
+    <!-- REF -->
+    <div class="rvtt-cpr-cell">
+      <div class="rvtt-cpr-cell__fill">
+        <numberfield
+          placeholder="0"
+          size="xs"
+          width="100%"
+          hidecontrols="true"
+          hideonlocked="true"
+          field="ref"
+          label="REF"
+          textalign="center"
+          minvalue="0"
+          onchange="onUpdateStat(value, 'ref')"
+        ></numberfield>
+        <numberfield
+          placeholder="0"
+          size="xs"
+          width="100%"
+          hidecontrols="true"
+          hideonlocked="false"
+          field="totalRef"
+          label="REF"
+          textalign="center"
+          minvalue="0"
+        ></numberfield>
+      </div>
+    </div>
+
+    <!-- DEX -->
+    <div class="rvtt-cpr-cell">
+      <div class="rvtt-cpr-cell__fill">
+        <numberfield
+          placeholder="0"
+          size="xs"
+          width="100%"
+          hidecontrols="true"
+          hideonlocked="true"
+          field="dex"
+          label="DEX"
+          textalign="center"
+          minvalue="0"
+          onchange="onUpdateStat(value, 'dex')"
+        ></numberfield>
+        <numberfield
+          placeholder="0"
+          size="xs"
+          width="100%"
+          hidecontrols="true"
+          hideonlocked="false"
+          field="totalDex"
+          label="DEX"
+          textalign="center"
+          minvalue="0"
+        ></numberfield>
+      </div>
+    </div>
+
+    <!-- TECH -->
+    <div class="rvtt-cpr-cell">
+      <div class="rvtt-cpr-cell__fill">
+        <numberfield
+          placeholder="0"
+          size="xs"
+          width="100%"
+          hidecontrols="true"
+          hideonlocked="true"
+          field="tech"
+          label="TECH"
+          textalign="center"
+          minvalue="0"
+          onchange="onUpdateStat(value, 'tech')"
+        ></numberfield>
+        <numberfield
+          placeholder="0"
+          size="xs"
+          width="100%"
+          hidecontrols="true"
+          hideonlocked="false"
+          field="totalTech"
+          label="TECH"
+          textalign="center"
+          minvalue="0"
+        ></numberfield>
+      </div>
+    </div>
+
+    <!-- COOL -->
+    <div class="rvtt-cpr-cell">
+      <div class="rvtt-cpr-cell__fill">
+        <numberfield
+          placeholder="0"
+          size="xs"
+          width="100%"
+          hidecontrols="true"
+          hideonlocked="true"
+          field="cool"
+          label="COOL"
+          textalign="center"
+          minvalue="0"
+          onchange="onUpdateStat(value, 'cool')"
+        ></numberfield>
+        <numberfield
+          placeholder="0"
+          size="xs"
+          width="100%"
+          hidecontrols="true"
+          hideonlocked="false"
+          field="totalCool"
+          label="COOL"
+          textalign="center"
+          minvalue="0"
+        ></numberfield>
+      </div>
+    </div>
+
+    <!-- WILL -->
+    <div class="rvtt-cpr-cell">
+      <div class="rvtt-cpr-cell__fill">
+        <numberfield
+          placeholder="0"
+          size="xs"
+          width="100%"
+          hidecontrols="true"
+          hideonlocked="true"
+          field="will"
+          label="WILL"
+          textalign="center"
+          minvalue="0"
+          onchange="onUpdateStat(value, 'will')"
+        ></numberfield>
+        <numberfield
+          placeholder="0"
+          size="xs"
+          width="100%"
+          hidecontrols="true"
+          hideonlocked="false"
+          field="totalWill"
+          label="WILL"
+          textalign="center"
+          minvalue="0"
+        ></numberfield>
+      </div>
+    </div>
+
+    <!-- LUCK | MAX -->
+    <div class="rvtt-cpr-cell">
+      <div class="rvtt-cpr-cell__fill" style="flex-direction: row">
+        <div class="rvtt-cpr-cell-half">
+          <numberfield
+            placeholder="0"
+            size="xs"
+            width="100%"
+            label="LUCK"
+            field="curLuck"
+            hidecontrols="true"
+            textalign="center"
+            minvalue="0"
+            maxvaluefield="luck"
+            onchange="onUpdateStat(value, 'curLuck')"
+          ></numberfield>
+        </div>
+        <div class="rvtt-cpr-cell-sep"></div>
+        <div class="rvtt-cpr-cell-half">
+          <numberfield
+            placeholder="0"
+            size="xs"
+            width="100%"
+            field="luck"
+            hideonlocked="true"
+            label="MAX"
+            hidecontrols="true"
+            textalign="center"
+            minvalue="0"
+            onchange="onUpdateStat(value, 'luck')"
+          ></numberfield>
+          <numberfield
+            placeholder="0"
+            size="xs"
+            width="100%"
+            field="totalLuck"
+            hideonlocked="false"
+            label="MAX"
+            hidecontrols="true"
+            textalign="center"
+            minvalue="0"
+          ></numberfield>
+        </div>
+      </div>
+    </div>
+
+    <!-- Use Luck -->
+    <popover onclose="onUseLuck()">
+      <popover.target>
+        <button
+          field="useLuckBtn"
+          label="Use Luck"
+          size="xxs"
+          width="90px"
+          color="primary"
+          variant="filled"
+          textalign="center"
+          onclick=""
+        ></button>
+      </popover.target>
+      <popover.dropdown>
+        <label variant="bold" size="md" label="Use Luck"></label>
+        <label
+          variant="default"
+          size="sm"
+          label="Enter the desired amount to use."
+        ></label>
+        <div
+          style="
+            display: flex;
+            flex-direction: row;
+            gap: 4px;
+            align-items: flex-end;
+          "
+        >
+          <numberfield
+            placeholder="0"
+            defaultvalue="0"
+            size="xs"
+            width="80px"
+            label="Amount"
+            field="useLuck"
+            minvalue="0"
+            updateonblur="true"
+            editable="true"
+          ></numberfield>
+          <button
+            field="useLuckBtn2"
+            label="Use Luck"
+            size="xs"
+            color="primary"
+            variant="outline"
+            onclick="useLuck()"
+          ></button>
+        </div>
+        <div
+          style="
+            display: flex;
+            flex-direction: row;
+            gap: 4px;
+            align-items: flex-end;
+            margin-top: 4px;
+          "
+        >
+          <button
+            field="Reset Luck"
+            size="xs"
+            color="secondary"
+            variant="outline"
+            onclick="onResetLuck()"
+          ></button>
+        </div>
+      </popover.dropdown>
+    </popover>
+
+    <!-- MOVE -->
+    <div class="rvtt-cpr-cell">
+      <div class="rvtt-cpr-cell__fill">
+        <numberfield
+          placeholder="0"
+          size="xs"
+          width="100%"
+          field="move"
+          hideonlocked="true"
+          label="MOVE"
+          hidecontrols="true"
+          textalign="center"
+          minvalue="0"
+          onchange="onUpdateStat(value, 'move')"
+        ></numberfield>
+        <numberfield
+          placeholder="0"
+          size="xs"
+          width="100%"
+          field="totalMove"
+          hideonlocked="false"
+          label="MOVE"
+          hidecontrols="true"
+          textalign="center"
+          minvalue="0"
+        ></numberfield>
+      </div>
+    </div>
+
+    <!-- BODY -->
+    <div class="rvtt-cpr-cell">
+      <div class="rvtt-cpr-cell__fill">
+        <numberfield
+          placeholder="0"
+          size="xs"
+          width="100%"
+          field="body"
+          hideonlocked="true"
+          label="BODY"
+          hidecontrols="true"
+          textalign="center"
+          minvalue="0"
+          onchange="onUpdateStat(value, 'body')"
+        ></numberfield>
+        <numberfield
+          placeholder="0"
+          size="xs"
+          width="100%"
+          field="totalBody"
+          hideonlocked="false"
+          label="BODY"
+          hidecontrols="true"
+          textalign="center"
+          minvalue="0"
+        ></numberfield>
+      </div>
+    </div>
+
+    <!-- EMP | MAX -->
+    <div class="rvtt-cpr-cell">
+      <div class="rvtt-cpr-cell__fill" style="flex-direction: row">
+        <div class="rvtt-cpr-cell-half">
+          <numberfield
+            placeholder="0"
+            size="xs"
+            width="100%"
+            label="EMP"
+            field="curEmp"
+            hideonlocked="true"
+            hidecontrols="true"
+            textalign="center"
+            maxvaluefield="emp"
+            minvalue="0"
+            onchange="onUpdateStat(value, 'curEmp')"
+          ></numberfield>
+          <numberfield
+            placeholder="0"
+            size="xs"
+            width="100%"
+            label="EMP"
+            field="totalCurEmp"
+            hideonlocked="false"
+            hidecontrols="true"
+            textalign="center"
+            maxvaluefield="emp"
+            minvalue="0"
+          ></numberfield>
+        </div>
+        <div class="rvtt-cpr-cell-sep"></div>
+        <div class="rvtt-cpr-cell-half">
+          <numberfield
+            placeholder="0"
+            size="xs"
+            width="100%"
+            field="emp"
+            hideonlocked="true"
+            label="MAX"
+            hidecontrols="true"
+            textalign="center"
+            minvalue="0"
+            onchange="onUpdateStat(value, 'emp')"
+          ></numberfield>
+          <numberfield
+            placeholder="0"
+            size="xs"
+            width="100%"
+            field="totalEmp"
+            hideonlocked="false"
+            label="MAX"
+            hidecontrols="true"
+            textalign="center"
+            minvalue="0"
+          ></numberfield>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== DETAILS COLUMN ===== -->
+  <div
+    style="
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      flex: 1;
+      min-width: 0;
+    "
+  >
+    <label field="namefield" class="rvtt-datapad-display-name"></label>
+
+    <div
+      style="
+        display: flex;
+        flex-direction: row;
+        gap: 4px;
+        align-items: flex-end;
+      "
+    >
+      <stringfield
+        placeholder="Drop a Role to add a Rank"
+        size="sm"
+        width="100%"
+        field="role"
+        label="Role and Rank"
+      ></stringfield>
+      <list
+        listtype="role_icon_list"
+        field="roles"
+        onchange="onRoleDelete()"
+      ></list>
+    </div>
+
+    <div style="display: flex; flex-direction: row; gap: 4px; width: 100%">
+      <div
+        style="width: 135px; min-width: 135px; height: 135px; min-height: 135px"
+      >
+        <portrait variant="fancy" width="135px" height="135px"></portrait>
+      </div>
+
+      <div
+        style="
+          display: flex;
+          flex-direction: column;
+          gap: 4px;
+          flex: 1;
+          min-width: 0;
+        "
+      >
+        <div
+          style="
+            display: flex;
+            flex-direction: row;
+            gap: 4px;
+            align-items: flex-end;
+          "
+        >
+          <numberfield
+            placeholder="0"
+            size="sm"
+            width="100%"
+            field="curhp"
+            icon="IconHeart"
+            label="Current HP"
+            color="pink"
+            minvalue="0"
+          ></numberfield>
+          <numberfield
+            placeholder="0"
+            size="sm"
+            width="100%"
+            icon="IconHeartFilled"
+            field="hitpoints"
+            label="Max HP"
+            color="green"
+            minvalue="0"
+          ></numberfield>
+          <numberfield
+            placeholder="0"
+            size="sm"
+            width="100%"
+            icon="IconShield"
+            field="coverHp"
+            label="Cover HP"
+            color="blue"
+            minvalue="0"
+          ></numberfield>
+          <iconbutton
+            field="Rest"
+            size="md"
+            color="default"
+            variant="default"
+            options='[{"icon": "IconBed", "label": "Rest", "value": "use"}]'
+            onclick="onRest()"
+          ></iconbutton>
+        </div>
+
+        <div
+          style="
+            display: flex;
+            flex-direction: row;
+            gap: 8px;
+            align-items: flex-end;
+            margin-top: 4px;
+          "
+        >
+          <div
+            style="
+              display: flex;
+              flex-direction: column;
+              gap: 2px;
+              flex: 1;
+              min-width: 0;
+            "
+          >
+            <label
+              class="rvtt-datapad-label rvtt-datapad-label--accent"
+              label="Seriously Wounded"
+            ></label>
+            <div
+              style="
+                display: flex;
+                flex-direction: row;
+                gap: 8px;
+                align-items: baseline;
+              "
+            >
+              <label field="seriouslyWounded" variant="bold" size="xl"></label>
+              <label
+                size="xs"
+                color="dimmed"
+                label="-2 to All Actions When Seriously Wounded"
+              ></label>
+            </div>
+          </div>
+
+          <numberfield
+            placeholder="0"
+            size="xs"
+            width="120px"
+            minvalue="0"
+            maxvalue="10"
+            icon="IconSkull"
+            field="deathSave"
+            label="Death Save"
+          ></numberfield>
+
+          <iconbutton
+            field="Roll Death Save"
+            size="md"
+            color="red"
+            variant="light"
+            options='[{"icon": "D10", "label": "Roll Death Save", "value": "roll"}]'
+            onclick="onRollDeathSave()"
+          ></iconbutton>
+        </div>
+      </div>
+    </div>
+
+    <!-- Armor -->
+    <table style="width: 100%; border-spacing: 4px; border-collapse: separate">
+      <thead>
+        <tr>
+          <th style="width: 50px"></th>
+          <th style="width: 100%; text-align: left">
+            <label
+              class="rvtt-datapad-label rvtt-datapad-label--accent"
+              label="Armor"
+            ></label>
+          </th>
+          <th style="width: 70px; text-align: center">
+            <label
+              class="rvtt-datapad-label rvtt-datapad-label--accent"
+              label="SP"
+            ></label>
+          </th>
+          <th style="width: 70px; text-align: center">
+            <label
+              class="rvtt-datapad-label rvtt-datapad-label--accent"
+              label="Penalty"
+            ></label>
+          </th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>
+            <label
+              class="rvtt-datapad-label"
+              variant="bold"
+              size="xs"
+              label="Head"
+            ></label>
+          </td>
+          <td>
+            <stringfield
+              placeholder="No Head Armor Equipped"
+              size="xs"
+              width="100%"
+              field="headArmor"
+            ></stringfield>
+          </td>
+          <td>
+            <numberfield
+              placeholder="0"
+              minvalue="0"
+              size="xs"
+              width="70px"
+              field="headArmorSP"
+              onchange="onUpdateSp('head')"
+            ></numberfield>
+          </td>
+          <td>
+            <numberfield
+              placeholder="0"
+              minvalue="0"
+              size="xs"
+              width="70px"
+              field="headArmorPenalty"
+              onchange="onUpdatePenalty('head')"
+            ></numberfield>
+          </td>
+        </tr>
+        <tr>
+          <td>
+            <label
+              class="rvtt-datapad-label"
+              variant="bold"
+              size="xs"
+              label="Body"
+            ></label>
+          </td>
+          <td>
+            <stringfield
+              placeholder="No Body Armor Equipped"
+              size="xs"
+              width="100%"
+              field="bodyArmor"
+            ></stringfield>
+          </td>
+          <td>
+            <numberfield
+              placeholder="0"
+              minvalue="0"
+              size="xs"
+              width="70px"
+              field="bodyArmorSP"
+              onchange="onUpdateSp('body')"
+            ></numberfield>
+          </td>
+          <td>
+            <numberfield
+              placeholder="0"
+              minvalue="0"
+              size="xs"
+              width="70px"
+              field="bodyArmorPenalty"
+              onchange="onUpdatePenalty('body')"
+            ></numberfield>
+          </td>
+        </tr>
+        <tr>
+          <td>
+            <label
+              class="rvtt-datapad-label"
+              variant="bold"
+              size="xs"
+              label="Shield"
+            ></label>
+          </td>
+          <td>
+            <div style="display: flex; flex-direction: row; gap: 4px">
+              <stringfield
+                placeholder="No Shield Equipped"
+                size="xs"
+                width="100%"
+                field="shield"
+              ></stringfield>
+              <iconbutton
+                field="shieldDown"
+                size="md"
+                color="secondary"
+                variant="light"
+                options='[{"icon": "IconShieldDown", "label": "Shield Down", "value": "shieldDown"}, {"icon": "IconShieldCheckFilled", "label": "Shield Up", "value": "shieldUp"}]'
+              ></iconbutton>
+            </div>
+          </td>
+          <td>
+            <numberfield
+              placeholder="0"
+              minvalue="0"
+              size="xs"
+              width="70px"
+              field="shieldHP"
+              onchange="onUpdateSp('shield')"
+            ></numberfield>
+          </td>
+          <td>
+            <numberfield
+              placeholder="0"
+              minvalue="0"
+              size="xs"
+              width="70px"
+              field="shieldPenalty"
+              onchange="onUpdatePenalty('shield')"
+            ></numberfield>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+
+    <!-- Critical Injuries / Addictions -->
+    <div style="display: flex; flex-direction: row; gap: 8px; width: 100%">
+      <div
+        style="
+          display: flex;
+          flex-direction: column;
+          gap: 4px;
+          flex: 1;
+          min-width: 0;
+        "
+      >
+        <label
+          class="rvtt-datapad-label rvtt-datapad-label--accent"
+          label="Critical Injuries"
+        ></label>
+        <div style="height: 110px; overflow-y: auto">
+          <list
+            listtype="critical_injury_list"
+            field="criticalInjuries"
+            variant="striped"
+            height="100%"
+            onchange="onConditionChange()"
+          ></list>
+        </div>
+      </div>
+      <div
+        style="
+          display: flex;
+          flex-direction: column;
+          gap: 4px;
+          flex: 1;
+          min-width: 0;
+        "
+      >
+        <label
+          class="rvtt-datapad-label rvtt-datapad-label--accent"
+          label="Addictions"
+        ></label>
+        <div style="height: 110px; overflow-y: auto">
+          <list
+            listtype="addictions_list"
+            field="addictions"
+            variant="striped"
+            height="100%"
+            onchange="onConditionChange()"
+          ></list>
+        </div>
+      </div>
+    </div>
+
+    <!-- Humanity -->
+    <div
+      style="
+        display: flex;
+        flex-direction: row;
+        gap: 6px;
+        align-items: flex-end;
+        width: 100%;
+        max-width: 320px;
+      "
+    >
+      <numberfield
+        placeholder="0"
+        size="xs"
+        width="100%"
+        icon="IconBrain"
+        field="curHumanity"
+        onchange="onUpdateStat(value, 'curHumanity')"
+        label="Humanity"
+        color="cyan"
+      ></numberfield>
+      <numberfield
+        placeholder="0"
+        size="xs"
+        width="100%"
+        field="totalHumanity"
+        hideonlocked="false"
+        color="blue"
+        label="Max Humanity"
+      ></numberfield>
+      <numberfield
+        placeholder="0"
+        size="xs"
+        width="100%"
+        field="humanity"
+        onchange="onUpdateStat(value, 'humanity')"
+        hideOnLocked="true"
+        color="blue"
+        label="Max Humanity"
+      ></numberfield>
+    </div>
+  </div>
+</div>

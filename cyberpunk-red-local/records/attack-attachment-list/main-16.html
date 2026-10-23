@@ -1,0 +1,71 @@
+<script>
+  function getWeaponAttachmentFilters() {
+    // Attached weapons are not carried, so we need to cancel that filter out
+    const filters = [
+      {
+        field: "carried",
+        operation: "not_equals",
+        value: "carried",
+        isOr: true,
+      },
+    ];
+    return filters;
+  }
+
+  function onAttachmentLoad() {
+    if (!dataPath) {
+      return;
+    }
+    const attachmentDataPath = dataPath.replace(".data.attachmentsIcon", "");
+    const attachment = api.getValue(attachmentDataPath);
+    const valuesToSet = {};
+    const isShown = attachment.fields?.attachmentProperties?.hidden === false;
+    if (attachment.data?.attachmentType !== "weapon" && !isShown) {
+      valuesToSet[
+        `${attachmentDataPath}.fields.attachmentProperties.hidden`
+      ] = false;
+      // Check if active is undefined and if so default to true
+      if (
+        attachment.data?.active === undefined ||
+        attachment.data?.active === null
+      ) {
+        valuesToSet[`${attachmentDataPath}.data.active`] = true;
+      }
+
+      api.setValues(valuesToSet);
+    }
+  }
+</script>
+
+<div
+  class="rvtt-cpr-row rvtt-cpr-row--sub"
+  style="display: flex; flex-direction: row; align-items: center"
+>
+  <iconbutton
+    variant="outline"
+    field="attachmentsIcon"
+    color="default"
+    onload="onAttachmentLoad()"
+    options='[{"icon": "IconCornerDownRight", "label": "Attachments", "value": "asttachments"}]'
+  ></iconbutton>
+
+  <box field="attachmentProperties" hidden="true">
+    <div
+      style="display: flex; flex-direction: row; align-items: center; gap: 4px"
+    >
+      <checkbox field="active" label="Active?" textalign="right"></checkbox>
+      <namefield
+        field="namefield"
+        variant="standard"
+        placeholder="Attachment Name..."
+      ></namefield>
+    </div>
+  </box>
+
+  <list
+    field="weaponAttached"
+    listtype="attack_list"
+    variant="standard"
+    getfilters="return getWeaponAttachmentFilters();"
+  ></list>
+</div>

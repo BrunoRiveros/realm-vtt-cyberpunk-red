@@ -1,0 +1,102 @@
+<!-- This list is just the foundational cyberware equipped for a specific type -->
+<script>
+  const rollHumanityLoss = (name) => {
+    const cyberwareDataPath = getNearestParentDataPath(dataPath);
+    const cyberware = api.getValue(cyberwareDataPath);
+    const baseLoss = `${cyberware.data?.baseHumanityLoss}` || "0";
+    const rollLoss = cyberware.data?.humanityLoss || "1d6";
+    const metadata = {
+      // Always use base loss if base is selected, else check if half loss is enabled
+      halfHumanityLoss:
+        name === "Base" ? false : cyberware.data?.halfHumanityLoss || false,
+      isBaseLoss: name === "Base",
+    };
+
+    api.closeOpenedPopovers();
+
+    api.promptRoll(
+      `${name} Humanity Loss`,
+      name === "Base" ? baseLoss : rollLoss,
+      [],
+      metadata,
+      "humanityLoss"
+    );
+  };
+</script>
+
+<!-- Two-line row, matching cyberware-list.html: portrait on the left, item
+     name on its own line, action controls on a second line. -->
+<div
+  class="rvtt-cpr-row"
+  style="
+    display: flex;
+    flex-direction: row;
+    gap: 6px;
+    align-items: center;
+    padding: 3px 2px;
+    min-height: 46px;
+  "
+>
+  <div style="width: 40px; min-width: 40px">
+    <portrait width="40px" height="40px" name="portrait"></portrait>
+  </div>
+  <div
+    style="
+      flex-grow: 1;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    "
+  >
+    <namefield
+      size="xs"
+      variant="standard"
+      placeholder="Item"
+      field="namefield"
+      width="100%"
+    ></namefield>
+    <div
+      style="display: flex; flex-direction: row; gap: 4px; align-items: center"
+    >
+      <checkbox field="active" size="xs" label="Active"></checkbox>
+      <popover field="popover">
+        <popover.target>
+          <iconbutton
+            size="sm"
+            hidden="true"
+            field="humanityLossBtn"
+            variant="default"
+            options='[{"icon": "IconBrain", "label": "Roll Humanity Loss", "value": "humanityLoss"}]'
+          ></iconbutton>
+        </popover.target>
+        <popover.dropdown>
+          <label
+            size="sm"
+            variant="bold"
+            textalign="center"
+            label="Humanity Loss"
+          ></label>
+          <div style="display: flex; gap: 4px; align-items: center">
+            <button
+              field="baseLossBtn"
+              size="sm"
+              variant="outline"
+              color="primary"
+              label="Apply Base Loss"
+              onclick="rollHumanityLoss('Base')"
+            ></button>
+            <button
+              field="rollLossBtn"
+              size="sm"
+              variant="outline"
+              color="secondary"
+              label="Roll for Loss"
+              onclick="rollHumanityLoss('Roll')"
+            ></button>
+          </div>
+        </popover.dropdown>
+      </popover>
+    </div>
+  </div>
+</div>

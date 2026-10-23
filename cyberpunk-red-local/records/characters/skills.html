@@ -1,0 +1,37 @@
+<!-- Datapad-themed Skills tab. No section box — just the divider label —
+     and the two skill-group columns flex-wrap: side by side when there is
+     room, stacking (column 2 below column 1) as the window narrows. -->
+<div
+  class="sheet--datapad sheet--datapad--cpr"
+  style="display: flex; flex-direction: column; gap: 8px; margin-top: 4px"
+>
+  <div class="rvtt-datapad-divider">
+    <span class="rvtt-datapad-divider__label">Skills</span>
+  </div>
+  <div
+    style="
+      display: flex;
+      flex-direction: row;
+      flex-wrap: wrap;
+      align-items: flex-start;
+      gap: 4px 16px;
+    "
+  >
+    <div style="flex: 1 1 280px; min-width: 0">
+      <list
+        listtype="skill_group_list"
+        field="skillGroups1"
+        height="100%"
+        variant="flex"
+      ></list>
+    </div>
+    <div style="flex: 1 1 280px; min-width: 0">
+      <list
+        listtype="skill_group_list"
+        field="skillGroups2"
+        height="100%"
+        variant="flex"
+      ></list>
+    </div>
+  </div>
+</div>

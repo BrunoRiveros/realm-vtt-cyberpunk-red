@@ -1,0 +1,606 @@
+<script>
+  function onUsedIPChange() {
+    // Total up all the used IP values in the list
+    let usedIP = 0;
+    const usedIPList = record.data.ipSpent || [];
+    usedIPList.forEach((usedEntry) => {
+      const amountUsed = parseInt(usedEntry.data?.usedIP, 10);
+      if (!isNaN(amountUsed) && amountUsed > 0) {
+        usedIP += amountUsed;
+      }
+    });
+
+    api.setValues({ "data.usedIP": usedIP });
+  }
+
+  function onReputationEventChange() {
+    // Set the character's reputation to the highest value in the list
+    // (or the lowest if negative)
+    let highestRep = 0;
+    let curHighestRep = 0;
+    const repEventList = record.data.repEventList || [];
+    repEventList.forEach((repEvent) => {
+      const repValue = parseInt(repEvent.data?.reputation, 10);
+      if (!isNaN(repValue) && Math.abs(repValue) > Math.abs(curHighestRep)) {
+        curHighestRep = Math.abs(repValue);
+        highestRep = repValue;
+      } else if (
+        !isNaN(repValue) &&
+        Math.abs(repValue) === Math.abs(curHighestRep)
+      ) {
+        if (repValue > 0) {
+          highestRep = repValue;
+        }
+      }
+    });
+
+    api.setValues({ "data.reputation": highestRep });
+  }
+
+  function onReputationCheck() {
+    api.closeOpenedPopovers();
+    api.promptRoll(
+      `Reputation Check`,
+      "1d10",
+      [],
+      {
+        dv: record.data?.reputation || 0,
+      },
+      "reputation",
+    );
+  }
+
+  function onReputationFaceDown() {
+    api.closeOpenedPopovers();
+    performFaceDownRoll(record);
+  }
+</script>
+
+<!-- Datapad-themed Cyberpunk RED notes/lifepath tab. Every stringfield,
+     list, popover and on* handler preserved verbatim. -->
+<div
+  class="sheet--datapad sheet--datapad--cpr"
+  style="display: flex; flex-direction: column; gap: 8px; margin-top: 4px"
+>
+  <!-- ===== IP & REPUTATION ===== -->
+  <div class="rvtt-datapad-section">
+    <div class="rvtt-datapad-divider">
+      <span class="rvtt-datapad-divider__label">IP &amp; Reputation</span>
+    </div>
+    <div style="display: flex; flex-direction: row; gap: 8px; width: 100%">
+      <!-- IP -->
+      <div style="display: flex; flex-direction: column; gap: 4px; width: 100%">
+        <div
+          style="
+            display: flex;
+            flex-direction: row;
+            gap: 4px;
+            width: 100%;
+            align-items: flex-end;
+          "
+        >
+          <numberfield
+            field="usedIP"
+            label="Used I.P."
+            placeholder="0"
+            editable="false"
+            size="sm"
+            hidecontrols="true"
+          ></numberfield>
+          <label variant="bold" size="sm" label="of"></label>
+          <numberfield
+            field="IP"
+            label="Total I.P."
+            placeholder="0"
+            size="sm"
+            hidecontrols="true"
+          ></numberfield>
+        </div>
+
+        <label
+          class="rvtt-datapad-label rvtt-datapad-label--accent"
+          label="I.P. Spending Tracker"
+        ></label>
+        <div style="width: 100%; height: 25px">
+          <progressbar
+            field="usedIP"
+            label="Used IP"
+            width="100%"
+            height="100%"
+            currentvaluefield="usedIP"
+            color="secondary"
+            maxvaluefield="IP"
+            size="xl"
+          ></progressbar>
+        </div>
+        <div style="max-height: 200px; overflow-y: auto">
+          <list
+            field="ipSpent"
+            listtype="ip_used_list"
+            variant="outline-striped"
+            onchange="onUsedIPChange()"
+          ></list>
+        </div>
+      </div>
+
+      <!-- Aliases and Rep -->
+      <div style="display: flex; flex-direction: column; gap: 4px; width: 100%">
+        <stringfield
+          field="aliases"
+          label="Aliases"
+          placeholder="Enter aliases..."
+          size="xs"
+        ></stringfield>
+
+        <div
+          style="
+            display: flex;
+            flex-direction: row;
+            gap: 4px;
+            width: 100%;
+            align-items: flex-end;
+          "
+        >
+          <numberfield
+            field="reputation"
+            label="Reputation"
+            placeholder="0"
+            width="100%"
+            size="xs"
+            editable="false"
+            hidecontrols="true"
+          ></numberfield>
+          <popover>
+            <popover.target>
+              <button
+                size="xs"
+                field="targetedLocation"
+                variant="outline"
+                color="secondary"
+                label="Roll Reputation"
+              ></button>
+            </popover.target>
+            <popover.dropdown>
+              <div style="display: flex; flex-direction: column; gap: 4px">
+                <button
+                  size="xs"
+                  field="targetedLocation"
+                  variant="outline"
+                  color="secondary"
+                  icon="D10"
+                  label="Reputation Check"
+                  onclick="onReputationCheck()"
+                ></button>
+                <button
+                  size="xs"
+                  field="targetedLocation"
+                  variant="outline"
+                  color="tertiary"
+                  icon="D10"
+                  label="Face Down"
+                  onclick="onReputationFaceDown()"
+                ></button>
+              </div>
+            </popover.dropdown>
+          </popover>
+        </div>
+        <div style="max-height: 200px; overflow-y: auto">
+          <list
+            field="repEventList"
+            listtype="reputation_event_list"
+            variant="outline-striped"
+            onchange="onReputationEventChange()"
+          ></list>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== LIFEPATH ===== -->
+  <div class="rvtt-datapad-section">
+    <div class="rvtt-datapad-divider">
+      <span class="rvtt-datapad-divider__label">Lifepath</span>
+    </div>
+
+    <div style="display: flex; flex-direction: row; gap: 8px; width: 100%">
+      <!-- Column 1 -->
+      <div style="display: flex; flex-direction: column; gap: 4px; width: 100%">
+        <stringfield
+          field="culturalOrigins"
+          label="Cultural Origins"
+          placeholder="Enter cultural origins..."
+          multiline="true"
+          size="xs"
+        ></stringfield>
+
+        <stringfield
+          field="clothingStyle"
+          label="Clothing Style"
+          placeholder="Enter clothing style..."
+          multiline="true"
+          size="xs"
+        ></stringfield>
+
+        <stringfield
+          field="valueMost"
+          label="Values"
+          placeholder="What do you value most?"
+          multiline="true"
+          size="xs"
+        ></stringfield>
+
+        <stringfield
+          field="valuePerson"
+          label="Most Valued Person"
+          placeholder="Enter person..."
+          multiline="true"
+          size="xs"
+        ></stringfield>
+
+        <stringfield
+          field="familyBackground"
+          label="Family Background"
+          placeholder="Enter family background..."
+          multiline="true"
+          size="xs"
+        ></stringfield>
+
+        <stringfield
+          field="familyCrisis"
+          label="Family Crisis"
+          placeholder="Enter family crisis..."
+          multiline="true"
+          size="xs"
+        ></stringfield>
+
+        <div style="display: flex; flex-direction: row; gap: 4px; width: 100%">
+          <div
+            style="display: flex; flex-direction: column; gap: 4px; width: 100%"
+          >
+            <label
+              class="rvtt-datapad-label rvtt-datapad-label--accent"
+              style="margin-top: 4px"
+              label="Friends"
+            ></label>
+
+            <div style="display: flex; flex-direction: row; gap: 0px">
+              <iconbutton
+                variant="outline"
+                field="subskillIcon"
+                color="default"
+                options='[{"icon": "IconCornerDownRight", "label": "Subskill", "value": "Subskill"}]'
+              ></iconbutton>
+              <stringfield
+                field="friend1"
+                placeholder="Enter name..."
+                multiline="true"
+                size="xs"
+                width="100%"
+              ></stringfield>
+            </div>
+            <div style="display: flex; flex-direction: row; gap: 0px">
+              <iconbutton
+                variant="outline"
+                field="subskillIcon"
+                color="default"
+                options='[{"icon": "IconCornerDownRight", "label": "Subskill", "value": "Subskill"}]'
+              ></iconbutton>
+              <stringfield
+                field="friend2"
+                placeholder="Enter name..."
+                multiline="true"
+                size="xs"
+                width="100%"
+              ></stringfield>
+            </div>
+            <div style="display: flex; flex-direction: row; gap: 0px">
+              <iconbutton
+                variant="outline"
+                field="subskillIcon"
+                color="default"
+                options='[{"icon": "IconCornerDownRight", "label": "Subskill", "value": "Subskill"}]'
+              ></iconbutton>
+              <stringfield
+                field="friend3"
+                placeholder="Enter name..."
+                multiline="true"
+                size="xs"
+                width="100%"
+              ></stringfield>
+            </div>
+          </div>
+
+          <div
+            style="display: flex; flex-direction: column; gap: 4px; width: 100%"
+          >
+            <label
+              class="rvtt-datapad-label rvtt-datapad-label--accent"
+              style="margin-top: 4px"
+              label="Tragic Love Affairs"
+            ></label>
+
+            <div style="display: flex; flex-direction: row; gap: 0px">
+              <iconbutton
+                variant="outline"
+                field="subskillIcon"
+                color="default"
+                options='[{"icon": "IconCornerDownRight", "label": "Subskill", "value": "Subskill"}]'
+              ></iconbutton>
+              <stringfield
+                field="tragicAffair1"
+                placeholder="Enter name..."
+                multiline="true"
+                size="xs"
+                width="100%"
+              ></stringfield>
+            </div>
+            <div style="display: flex; flex-direction: row; gap: 0px">
+              <iconbutton
+                variant="outline"
+                field="subskillIcon"
+                color="default"
+                options='[{"icon": "IconCornerDownRight", "label": "Subskill", "value": "Subskill"}]'
+              ></iconbutton>
+              <stringfield
+                field="tragicAffair2"
+                placeholder="Enter name..."
+                multiline="true"
+                size="xs"
+                width="100%"
+              ></stringfield>
+            </div>
+            <div style="display: flex; flex-direction: row; gap: 0px">
+              <iconbutton
+                variant="outline"
+                field="subskillIcon"
+                color="default"
+                options='[{"icon": "IconCornerDownRight", "label": "Subskill", "value": "Subskill"}]'
+              ></iconbutton>
+              <stringfield
+                field="tragicAffair3"
+                placeholder="Enter name..."
+                multiline="true"
+                size="xs"
+                width="100%"
+              ></stringfield>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Column 2 -->
+      <div style="display: flex; flex-direction: column; gap: 4px; width: 100%">
+        <stringfield
+          field="personality"
+          label="Personality"
+          placeholder="Enter personality..."
+          multiline="true"
+          size="xs"
+        ></stringfield>
+
+        <stringfield
+          field="hairStyle"
+          label="Hair Style"
+          placeholder="Enter hair style..."
+          multiline="true"
+          size="xs"
+        ></stringfield>
+
+        <stringfield
+          field="feelingsPeople"
+          label="Feelings About People"
+          placeholder="Enter feelings about people..."
+          multiline="true"
+          size="xs"
+        ></stringfield>
+
+        <stringfield
+          field="valuedPossessions"
+          label="Most Valued Possession"
+          placeholder="Enter valued possession..."
+          multiline="true"
+          size="xs"
+        ></stringfield>
+
+        <stringfield
+          field="childhoodEnvironment"
+          label="Childhood Environment"
+          placeholder="Enter childhood environment..."
+          multiline="true"
+          size="xs"
+        ></stringfield>
+
+        <stringfield
+          field="lifeGoals"
+          label="Life Goals"
+          placeholder="Enter life goals..."
+          multiline="true"
+          size="xs"
+        ></stringfield>
+
+        <div style="display: flex; flex-direction: row; gap: 4px; width: 100%">
+          <stringfield
+            field="housing"
+            label="Housing"
+            placeholder="Enter housing..."
+            multiline="true"
+            size="xs"
+          ></stringfield>
+
+          <stringfield
+            field="rent"
+            label="Rent"
+            placeholder="Enter rent..."
+            multiline="true"
+            size="xs"
+          ></stringfield>
+        </div>
+
+        <stringfield
+          field="lifestyle"
+          label="Lifestyle"
+          placeholder="Enter lifestyle details..."
+          multiline="true"
+          size="xs"
+        ></stringfield>
+      </div>
+    </div>
+
+    <div style="margin-top: 6px">
+      <stringfield
+        field="roleSpecificLifepath"
+        label="Role Specific Lifepath"
+        placeholder="Enter role specific lifepath..."
+        multiline="true"
+        size="sm"
+      ></stringfield>
+    </div>
+  </div>
+
+  <!-- ===== ENEMIES ===== -->
+  <div class="rvtt-datapad-section">
+    <div class="rvtt-datapad-divider">
+      <span class="rvtt-datapad-divider__label">Enemies</span>
+    </div>
+    <div class="rvtt-cpr-enemies">
+      <div class="rvtt-cpr-enemy">
+        <iconbutton
+          variant="outline"
+          field="subskillIcon"
+          color="default"
+          options='[{"icon": "IconCornerDownRight", "label": "Subskill", "value": "Subskill"}]'
+        ></iconbutton>
+        <div class="rvtt-cpr-enemy-grid">
+          <stringfield
+            field="enemy1"
+            label="Who?"
+            placeholder="Enter name..."
+            multiline="true"
+            size="xs"
+            width="100%"
+          ></stringfield>
+          <stringfield
+            field="enemyCause1"
+            label="What Caused It?"
+            placeholder="Enter cause..."
+            multiline="true"
+            size="xs"
+            width="100%"
+          ></stringfield>
+          <stringfield
+            field="enemyThreat1"
+            label="What Can They Throw?"
+            placeholder="Enter threat..."
+            multiline="true"
+            size="xs"
+            width="100%"
+          ></stringfield>
+          <stringfield
+            field="enemyOutcome1"
+            label="What'll Happen?"
+            placeholder="Enter outcome..."
+            multiline="true"
+            size="xs"
+            width="100%"
+          ></stringfield>
+        </div>
+      </div>
+      <div class="rvtt-cpr-enemy">
+        <iconbutton
+          variant="outline"
+          field="subskillIcon"
+          color="default"
+          options='[{"icon": "IconCornerDownRight", "label": "Subskill", "value": "Subskill"}]'
+        ></iconbutton>
+        <div class="rvtt-cpr-enemy-grid">
+          <stringfield
+            field="enemy2"
+            label="Who?"
+            placeholder="Enter name..."
+            multiline="true"
+            size="xs"
+            width="100%"
+          ></stringfield>
+          <stringfield
+            field="enemyCause2"
+            label="What Caused It?"
+            placeholder="Enter cause..."
+            multiline="true"
+            size="xs"
+            width="100%"
+          ></stringfield>
+          <stringfield
+            field="enemyThreat2"
+            label="What Can They Throw?"
+            placeholder="Enter threat..."
+            multiline="true"
+            size="xs"
+            width="100%"
+          ></stringfield>
+          <stringfield
+            field="enemyOutcome2"
+            label="What'll Happen?"
+            placeholder="Enter outcome..."
+            multiline="true"
+            size="xs"
+            width="100%"
+          ></stringfield>
+        </div>
+      </div>
+      <div class="rvtt-cpr-enemy">
+        <iconbutton
+          variant="outline"
+          field="subskillIcon"
+          color="default"
+          options='[{"icon": "IconCornerDownRight", "label": "Subskill", "value": "Subskill"}]'
+        ></iconbutton>
+        <div class="rvtt-cpr-enemy-grid">
+          <stringfield
+            field="enemy3"
+            label="Who?"
+            placeholder="Enter name..."
+            multiline="true"
+            size="xs"
+            width="100%"
+          ></stringfield>
+          <stringfield
+            field="enemyCause3"
+            label="What Caused It?"
+            placeholder="Enter cause..."
+            multiline="true"
+            size="xs"
+            width="100%"
+          ></stringfield>
+          <stringfield
+            field="enemyThreat3"
+            label="What Can They Throw?"
+            placeholder="Enter threat..."
+            multiline="true"
+            size="xs"
+            width="100%"
+          ></stringfield>
+          <stringfield
+            field="enemyOutcome3"
+            label="What'll Happen?"
+            placeholder="Enter outcome..."
+            multiline="true"
+            size="xs"
+            width="100%"
+          ></stringfield>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== NOTES ===== -->
+  <div class="rvtt-datapad-section">
+    <div class="rvtt-datapad-divider">
+      <span class="rvtt-datapad-divider__label">Notes</span>
+    </div>
+    <richtextfield
+      field="notes"
+      placeholder="Enter notes..."
+      disablecontrols="true"
+    ></richtextfield>
+  </div>
+</div>

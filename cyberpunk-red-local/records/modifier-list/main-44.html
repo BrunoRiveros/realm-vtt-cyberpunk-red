@@ -1,0 +1,269 @@
+<script>
+  function onChangeModifierType() {
+    const modPath = dataPath.replace(".data.type", "");
+
+    const valuesToSet = {};
+
+    if (value === "statBonus") {
+      valuesToSet[`${modPath}.fields.field.hidden`] = true;
+      valuesToSet[`${modPath}.fields.value.hidden`] = true;
+      valuesToSet[`${modPath}.fields.smartBonus.hidden`] = true;
+      valuesToSet[`${modPath}.fields.valueType.hidden`] = true;
+      valuesToSet[`${modPath}.fields.active.hidden`] = true;
+      valuesToSet[`${modPath}.fields.itemOnly.hidden`] = true;
+      valuesToSet[`${modPath}.fields.statPenalty.hidden`] = true;
+      valuesToSet[`${modPath}.fields.statMinimum.hidden`] = true;
+
+      valuesToSet[`${modPath}.fields.stat.hidden`] = false;
+      valuesToSet[`${modPath}.fields.statBonus.hidden`] = false;
+      valuesToSet[`${modPath}.fields.statSet.hidden`] = false;
+      valuesToSet[`${modPath}.fields.statMaximum.hidden`] = false;
+      valuesToSet[`${modPath}.fields.noDerivedAttributes.hidden`] = false;
+    } else if (value === "statPenalty") {
+      valuesToSet[`${modPath}.fields.field.hidden`] = true;
+      valuesToSet[`${modPath}.fields.value.hidden`] = true;
+      valuesToSet[`${modPath}.fields.valueType.hidden`] = true;
+      valuesToSet[`${modPath}.fields.smartBonus.hidden`] = true;
+      valuesToSet[`${modPath}.fields.active.hidden`] = true;
+      valuesToSet[`${modPath}.fields.itemOnly.hidden`] = true;
+      valuesToSet[`${modPath}.fields.statBonus.hidden`] = true;
+      valuesToSet[`${modPath}.fields.statMaximum.hidden`] = true;
+
+      valuesToSet[`${modPath}.fields.stat.hidden`] = false;
+      valuesToSet[`${modPath}.fields.statPenalty.hidden`] = false;
+      valuesToSet[`${modPath}.fields.statSet.hidden`] = false;
+      valuesToSet[`${modPath}.fields.statMinimum.hidden`] = false;
+      valuesToSet[`${modPath}.fields.noDerivedAttributes.hidden`] = false;
+    } else if (value === "smartAmmo") {
+      valuesToSet[`${modPath}.fields.field.hidden`] = false;
+      valuesToSet[`${modPath}.fields.value.hidden`] = false;
+      valuesToSet[`${modPath}.fields.valueType.hidden`] = false;
+      valuesToSet[`${modPath}.fields.smartBonus.hidden`] = false;
+      valuesToSet[`${modPath}.fields.active.hidden`] = false;
+      valuesToSet[`${modPath}.fields.itemOnly.hidden`] = false;
+
+      valuesToSet[`${modPath}.fields.stat.hidden`] = true;
+      valuesToSet[`${modPath}.fields.statBonus.hidden`] = true;
+      valuesToSet[`${modPath}.fields.statPenalty.hidden`] = true;
+      valuesToSet[`${modPath}.fields.statSet.hidden`] = true;
+      valuesToSet[`${modPath}.fields.statMaximum.hidden`] = true;
+      valuesToSet[`${modPath}.fields.statMinimum.hidden`] = true;
+      valuesToSet[`${modPath}.fields.noDerivedAttributes.hidden`] = true;
+    } else {
+      valuesToSet[`${modPath}.fields.field.hidden`] = false;
+      valuesToSet[`${modPath}.fields.value.hidden`] = false;
+      valuesToSet[`${modPath}.fields.valueType.hidden`] = false;
+      valuesToSet[`${modPath}.fields.active.hidden`] = false;
+      valuesToSet[`${modPath}.fields.itemOnly.hidden`] = false;
+
+      valuesToSet[`${modPath}.fields.smartBonus.hidden`] = true;
+      valuesToSet[`${modPath}.fields.stat.hidden`] = true;
+      valuesToSet[`${modPath}.fields.statBonus.hidden`] = true;
+      valuesToSet[`${modPath}.fields.statPenalty.hidden`] = true;
+      valuesToSet[`${modPath}.fields.statSet.hidden`] = true;
+      valuesToSet[`${modPath}.fields.statMaximum.hidden`] = true;
+      valuesToSet[`${modPath}.fields.statMinimum.hidden`] = true;
+      valuesToSet[`${modPath}.fields.noDerivedAttributes.hidden`] = true;
+    }
+
+    api.setValues(valuesToSet);
+  }
+</script>
+
+<div style="display: flex; flex-direction: row; gap: 4px">
+  <dropdown
+    width="50%"
+    size="xs"
+    field="type"
+    placeholder="Select Modifier Type"
+    onchange="onChangeModifierType();"
+    label="Modifier Type"
+    options='[{"label": "Skill Check Bonus", "value": "skillBonus"},
+    {"label": "Skill Check Penalty", "value": "skillPenalty"},
+    {"label": "Attack Bonus", "value": "attackBonus"}, 
+    {"label": "Attack Penalty", "value": "attackPenalty"},
+    {"label": "Initiative Bonus", "value": "initiativeBonus"},
+    {"label": "Initiative Penalty", "value": "initiativePenalty"},
+    {"label": "Role Ability Bonus", "value": "roleAbilityBonus"},
+    {"label": "Role Ability Penalty", "value": "roleAbilityPenalty"},
+    {"label": "Damage Bonus", "value": "damageBonus"},
+    {"label": "Damage Penalty", "value": "damagePenalty"},
+    {"label": "Armor Ablation Bonus", "value": "armorAblationBonus"},
+    {"label": "Ignores Armor Under", "value": "ignoresArmorUnder"},
+    {"label": "Damage is Non-lethal", "value": "nonLethal"},
+    {"label": "Damage is Non-lethal if HP > 1", "value": "nonLethalGreaterThanOne"},
+    {"label": "No Armor Ablation", "value": "noArmorAblation"},
+    {"label": "No Critical Injuries", "value": "noCriticalInjuries"},
+    {"label": "Ignores Half SP", "value": "ignoreHalfSp"},
+    {"label": "Critical Injury Damage Bonus", "value": "criticalInjuryDamageBonus"},
+    {"label": "Critical Injury Damage Penalty", "value": "criticalInjuryDamagePenalty"},
+    {"label": "Smart Ammo (if Miss by Value or Less)", "value": "smartAmmo"},
+    {"label": "Natural Healing Bonus", "value": "healingBonus"},
+    {"label": "Heals Current SP", "value": "healCurrentSp"},
+    {"label": "Ignore Seriously Wounded Penalty", "value": "ignoreSeriouslyWounded"},
+    {"label": "STAT Bonus", "value": "statBonus"},
+    {"label": "STAT Penalty", "value": "statPenalty"},
+    {"label": "Applies Body Armor SP", "value": "bodySp"},
+    {"label": "Applies Head Armor SP", "value": "headSp"},
+    {"label": "Applies Shield HP", "value": "shieldSp"},
+    {"label": "Ammo per Shot", "value": "ammoPerShot"},
+    {"label": "Ammo per Autofire Shot", "value": "ammoPerAutofireShot"},
+    {"label": "Death Save Penalty", "value": "deathSavePenalty"},
+    {"label": "Damage Multiplier You Take From Headshots", "value": "headshotMultiplier"},
+    {"label": "Damage Reduction from Programs", "value": "programDamageReduction"}]'
+  >
+  </dropdown>
+
+  <stringfield
+    width="50%"
+    size="xs"
+    field="field"
+    label="Field"
+    placeholder="Enter Field, if Applicable"
+    hidden="false"
+  ></stringfield>
+</div>
+
+<div
+  style="
+    display: flex;
+    flex-direction: row;
+    gap: 4px;
+    align-items: center;
+    margin-top: 4px;
+    flex-wrap: wrap;
+  "
+>
+  <dropdown
+    width="30%"
+    size="xs"
+    field="valueType"
+    placeholder="Select Value Type"
+    label="Value Type"
+    hidden="false"
+    options='[{"label": "Number", "value": "number"}, 
+    {"label": "String", "value": "string"}, {"label": "From Field", "value": "field"}]'
+  >
+  </dropdown>
+
+  <stringfield
+    width="30%"
+    size="xs"
+    field="value"
+    label="Value"
+    placeholder="Enter Value"
+    hidden="false"
+  ></stringfield>
+
+  <numberfield
+    width="30%"
+    size="xs"
+    field="smartBonus"
+    label="Smart Bonus"
+    placeholder="Enter Bonus"
+    hidden="true"
+  ></numberfield>
+
+  <dropdown
+    width="30%"
+    size="xs"
+    field="stat"
+    placeholder="Select STAT"
+    label="STAT"
+    hidden="true"
+    options='[{"label": "INT", "value": "int"}, 
+  {"label": "REF", "value": "ref"}, {"label": "DEX", "value": "dex"}, {"label": "TECH", "value": "tech"},
+  {"label": "COOL", "value": "cool"}, {"label": "WILL", "value": "dex"}, {"label": "LUCK", "value": "luck"},
+  {"label": "MOVE", "value": "move"}, {"label": "BODY", "value": "body"}, {"label": "EMP", "value": "emp"}]'
+  ></dropdown>
+
+  <numberfield
+    width="30%"
+    size="xs"
+    field="statBonus"
+    hidden="true"
+    label="STAT Bonus"
+    placeholder="Enter bonus..."
+  ></numberfield>
+
+  <numberfield
+    width="30%"
+    size="xs"
+    field="statPenalty"
+    hidden="true"
+    label="STAT Penalty"
+    placeholder="Enter penalty..."
+  ></numberfield>
+
+  <numberfield
+    width="30%"
+    size="xs"
+    field="statSet"
+    label="Set STAT To"
+    hidden="true"
+    placeholder="Or, enter value..."
+  ></numberfield>
+
+  <numberfield
+    width="30%"
+    size="xs"
+    field="statMaximum"
+    hidden="true"
+    label="Maximum"
+    placeholder="Optional max..."
+  ></numberfield>
+
+  <numberfield
+    width="30%"
+    size="xs"
+    field="statMinimum"
+    hidden="true"
+    label="Minimum"
+    placeholder="Optional min..."
+  ></numberfield>
+
+  <div
+    style="
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      align-self: flex-end;
+    "
+  >
+    <checkbox size="xs" field="active" label="Active by Default"></checkbox>
+    <checkbox
+      size="xs"
+      width="175px"
+      field="noDerivedAttributes"
+      hidden="true"
+      label="Does not Affect Derived Attributes"
+    ></checkbox>
+    <checkbox
+      size="xs"
+      width="175px"
+      hidden="true"
+      field="itemOnly"
+      label="Only Applies To This Item"
+    ></checkbox>
+  </div>
+
+  <div style="display: flex; flex-direction: row; gap: 4px; width: 100%">
+    <stringfield
+      size="xs"
+      width="50%"
+      field="requiredItem"
+      description="If the modifier requires another equipped item."
+      label="Required Item"
+      placeholder="Enter Required Item (if any)"
+    ></stringfield>
+
+    <numberfield
+      size="xs"
+      width="50%"
+      field="requiredCount"
+      description="If the modifier only applies if present this many times."
+      label="Required Count"
+      placeholder="Enter Required Count (if any)"
+    ></numberfield>
+  </div>
+</div>

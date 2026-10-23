@@ -1,0 +1,75 @@
+<div
+  style="
+    display: flex;
+    gap: 4px;
+    flex-direction: column;
+    width: 100%;
+    margin-bottom: 4px;
+  "
+>
+  <div style="display: flex; gap: 4px">
+    <div
+      style="width: 125px; height: 125px; min-height: 125px; min-width: 125px"
+    >
+      <portrait width="125px" height="125px" field="portrait"></portrait>
+    </div>
+    <div
+      style="
+        display: flex;
+        gap: 4px;
+        flex-direction: column;
+        width: 100%;
+        margin-bottom: 4px;
+      "
+    >
+      <dropdown
+        field="stat"
+        variant="default"
+        label="Default STAT"
+        placeholder="Select STAT..."
+        defaultvalue="int"
+        options='[
+        {"label": "INT", "value": "int"}, 
+        {"label": "REF", "value": "ref"}, 
+        {"label": "DEX", "value": "dex"}, 
+        {"label": "TECH", "value": "tech"}, 
+        {"label": "COOL", "value": "cool"}, 
+        {"label": "WILL", "value": "will"}, 
+        {"label": "LUCK", "value": "luck"}, 
+        {"label": "MOVE", "value": "move"}, 
+        {"label": "BODY", "value": "body"}, 
+        {"label": "EMP", "value": "emp"}
+      ]'
+      ></dropdown>
+      <checkbox
+        field="isDefault"
+        textalign="right"
+        label="Is Default"
+        size="sm"
+        onclick="onChangeDefault(value)"
+      ></checkbox>
+      <checkbox
+        field="isTimesTwo"
+        textalign="right"
+        label="Cost Double"
+        size="sm"
+      ></checkbox>
+      <checkbox
+        field="hasSubskills"
+        textalign="right"
+        label="Has Sub Skills"
+        size="sm"
+      ></checkbox>
+    </div>
+  </div>
+
+  <div style="margin-top: 8px; margin-bottom: 8px">
+    <divider label="Description"></divider>
+  </div>
+
+  <richtextfield
+    placeholder="Enter description..."
+    field="description"
+    label="Description"
+  ></richtextfield>
+</div>

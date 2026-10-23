@@ -1,0 +1,189 @@
+<script>
+  function onClickSkill(value) {
+    // Get the record of the skill you're clicking on.
+    // If it is a subskill, open the parent skill instead.
+    let skillName = value;
+
+    let skillDataPath = dataPath.includes(".namefield")
+      ? dataPath.replace(".namefield", "")
+      : dataPath.replace(".name", "");
+    let skill = api.getValue(skillDataPath);
+
+    if (skill.data?.hasSubskills) {
+      // Use regex to extract the parent skill path
+      const parentSkillDataPath = skillDataPath.replace(
+        /\.data\.subSkills\.\d+$/,
+        ""
+      );
+      const parentSkill = api.getValue(parentSkillDataPath);
+      skillName = parentSkill.name;
+    }
+
+    if (skillName.includes("(x2)")) {
+      skillName = skillName.replace("(x2)", "").trim();
+    }
+
+    const record = api.getRecordByTypeAndName("skill", skillName, (record) => {
+      if (record) {
+        api.openRecord(record);
+      }
+    });
+  }
+
+  function onUpdateSkillLevel(value) {
+    const val = parseInt(value, 10);
+    if (isNaN(val)) {
+      return;
+    }
+
+    const pathToSkill = dataPath.replace(".data.lvl", "");
+    const skill = api.getValue(pathToSkill);
+    let stat = skill.data?.stat;
+
+    // Get the base value
+    if (stat === "emp") {
+      // Special case for emp, we use curEmp instead of max emp
+      stat = "curEmp";
+    } else if (stat === "luck") {
+      // Special case for luck, we use curLuck instead of max luck
+      stat = "curLuck";
+    }
+
+    const statValue = api.getValue(`data.total${capitalize(stat)}`) || 0;
+
+    api.setValues({
+      [`${pathToSkill}.data.base`]: val + statValue,
+    });
+  }
+
+  function onUpdateStat(value) {
+    const pathToSkill = dataPath.replace(".data.stat", "");
+    const skill = api.getValue(pathToSkill);
+    let lvl = skill.data?.lvl || 0;
+
+    // value here is the stat name from the onChange event
+    let statName = value;
+    if (statName === "emp") {
+      // Special case for emp, we use curEmp instead of max emp
+      statName = "curEmp";
+    } else if (statName === "luck") {
+      // Special case for luck, we use curLuck instead of max luck
+      statName = "curLuck";
+    }
+
+    // Get the numeric value of the stat from the character sheet
+    const statValue = api.getValue(`data.total${capitalize(statName)}`) || 0;
+
+    api.setValues({
+      [`${pathToSkill}.data.base`]: lvl + statValue,
+    });
+  }
+
+  function onRollSkill() {
+    // Get the spell by path to ensure most up-to-date value
+    const skillDataPath = dataPath.replace(".data.rollSkill", "");
+    const skill = api.getValue(skillDataPath);
+    // Get the skill name
+    const skillName = skill.name || "New Skill";
+
+    performSkillRoll(record, skillName);
+  }
+</script>
+
+<div
+  class="rvtt-cpr-row"
+  style="
+    display: flex;
+    flex-direction: row;
+    gap: 4px;
+    align-items: center;
+    min-width: 150px;
+  "
+>
+  <div style="min-width: 60px; width: 100%">
+    <namefield
+      placeholder="Skill name..."
+      size="xs"
+      width="100%"
+      field="namefield"
+      variant="unstyled"
+      onclick="onClickSkill(value)"
+    ></namefield>
+    <!-- Below is used for defaul skills -->
+    <namefield
+      placeholder="Skill name..."
+      size="xs"
+      width="100%"
+      hidden="true"
+      bold="true"
+      field="name"
+      variant="unstyled"
+      hidden=""
+      onclick="onClickSkill(value)"
+    ></namefield>
+  </div>
+  <div
+    style="
+      display: flex;
+      flex-direction: row;
+      gap: 4px;
+      align-items: center;
+      margin-left: auto;
+    "
+  >
+    <iconbutton
+      size="sm"
+      field="stat"
+      variant="default"
+      onchange="onUpdateStat(value)"
+      options='[
+      {"label": "INT", "value": "int", "icon": "IconHexagonLetterIFilled"}, 
+      {"label": "REF", "value": "ref", "icon": "IconHexagonLetterRFilled"}, 
+      {"label": "DEX", "value": "dex", "icon": "IconHexagonLetterDFilled"}, 
+      {"label": "TECH", "value": "tech", "icon": "IconHexagonLetterTFilled"}, 
+      {"label": "COOL", "value": "cool", "icon": "IconHexagonLetterCFilled"}, 
+      {"label": "WILL", "value": "will", "icon": "IconHexagonLetterWFilled"}, 
+      {"label": "LUCK", "value": "luck", "icon": "IconHexagonLetterLFilled"}, 
+      {"label": "MOVE", "value": "move", "icon": "IconHexagonLetterMFilled"}, 
+      {"label": "BODY", "value": "body", "icon": "IconHexagonLetterBFilled"}, 
+      {"label": "EMP", "value": "emp", "icon": "IconHexagonLetterEFilled"}
+    ]'
+    ></iconbutton>
+    <numberfield
+      placeholder="0"
+      size="xs"
+      label="LVL"
+      width="36px"
+      field="lvl"
+      variant="tooltip"
+      onchange="onUpdateSkillLevel(value)"
+      hidecontrols="true"
+    ></numberfield>
+    <numberfield
+      placeholder="0"
+      size="xs"
+      label="BASE"
+      width="36px"
+      field="base"
+      variant="tooltip"
+      editable="false"
+      hidecontrols="true"
+    ></numberfield>
+    <iconbutton
+      field="rollSkill"
+      size="md"
+      variant="light"
+      options='[{"icon": "D10", "label": "Roll Skill", "value": "roll"}]'
+      onclick="onRollSkill()"
+    ></iconbutton>
+  </div>
+</div>
+<div style="width: calc(100% - 8px); margin-left: 8px">
+  <list
+    listtype="subskill_list"
+    field="subSkills"
+    variant="striped"
+    hidden="true"
+    height="100%"
+  ></list>
+</div>

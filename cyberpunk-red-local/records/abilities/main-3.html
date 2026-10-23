@@ -1,0 +1,133 @@
+<div
+  style="
+    display: flex;
+    gap: 4px;
+    flex-direction: column;
+    width: 100%;
+    margin-bottom: 4px;
+  "
+>
+  <div style="display: flex; gap: 4px; width: 100%">
+    <div
+      style="width: 125px; height: 125px; min-height: 125px; min-width: 125px"
+    >
+      <portrait width="125px" height="125px" field="portrait"></portrait>
+    </div>
+    <div
+      style="
+        display: flex;
+        gap: 4px;
+        flex-direction: column;
+        width: 100%;
+        margin-bottom: 4px;
+      "
+    >
+      <div style="display: flex; gap: 4px; width: 100%; align-items: flex-end">
+        <dropdown
+          width="100%"
+          field="checkSkill"
+          label="Skill"
+          placeholder="If Applicable, Select Skill to Roll..."
+          optionsquery='{"type": "skill", "query": {}}'
+        ></dropdown>
+        <checkbox
+          field="isAttack"
+          label="Is Attack"
+          width="200px"
+          size="md"
+        ></checkbox>
+      </div>
+      <dropdown
+        width="100%"
+        field="defenderSkill"
+        label="Defender Skill"
+        placeholder="If Applicable, Select Defender Skill to Roll..."
+        optionsquery='{"type": "skill", "query": {}}'
+      ></dropdown>
+    </div>
+  </div>
+
+  <div style="display: flex; gap: 4px; width: 100%">
+    <numberfield
+      width="100%"
+      field="checkDV"
+      description="If provided, this will be used as the DV for the skill check"
+      label="Skill Check DV"
+      placeholder="Enter DV..."
+      minvalue="0"
+    ></numberfield>
+  </div>
+
+  <dropdown
+    width="100%"
+    field="conditions"
+    label="Conditions"
+    description="Conditions that can be applied when used"
+    placeholder="Select Conditions if Applicable..."
+    multiselect="10"
+    optionsquery='{"type": "conditions", "query": {}}'
+  >
+  </dropdown>
+
+  <dropdown
+    width="100%"
+    field="effects"
+    label="Effects"
+    description="Effects that can be applied when used"
+    placeholder="Select Effects if Applicable..."
+    multiselect="10"
+    optionsquery='{"type": "effects", "query": {}}'
+  >
+  </dropdown>
+
+  <div style="display: flex; gap: 4px; width: 100%; align-items: flex-start">
+    <stringfield
+      width="100%"
+      field="damage"
+      label="Damage Override"
+      placeholder="Enter Damage..."
+    ></stringfield>
+    <div style="display: flex; flex-direction: column; gap: 4px; width: 100%">
+      <radio field="damageType" label="Use Default Brawling Damage"></radio>
+      <radio field="damageType" label="Use Default Martial Arts Damage"></radio>
+      <radio field="damageType" label="Use Body As Damage"></radio>
+    </div>
+  </div>
+
+  <div style="display: flex; gap: 4px; width: 100%; align-items: flex-start">
+    <radio field="ignoreArmor" label="Does Not Ignore Armor"></radio>
+    <radio field="ignoreArmor" label="Ignore Half Armor"></radio>
+    <radio field="ignoreArmor" label="Ignore Full Armor"></radio>
+  </div>
+
+  <div style="display: flex; gap: 4px; width: 100%; align-items: flex-start">
+    <checkbox field="nonlethal" size="sm" label="Non-Lethal Damage"></checkbox>
+  </div>
+
+  <div style="display: flex; gap: 4px; width: 100%; align-items: flex-start">
+    <numberfield
+      field="bonusAblation"
+      label="Bonus Ablation"
+      width="100%"
+      placeholder="Enter Bonus Ablation..."
+      minvalue="0"
+    ></numberfield>
+    <numberfield
+      field="critInjuryDamage"
+      label="Crit Injury Damage"
+      width="100%"
+      placeholder="Enter Injury Damage..."
+      minvalue="0"
+    ></numberfield>
+  </div>
+
+  <div style="margin-top: 8px; margin-bottom: 8px">
+    <divider label="Description"></divider>
+  </div>
+
+  <richtextfield
+    field="description"
+    label="Description"
+    placeholder="Enter description..."
+  ></richtextfield>
+</div>

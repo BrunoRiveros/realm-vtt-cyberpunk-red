@@ -1,0 +1,180 @@
+<script>
+  function onClickSkill() {
+    // Get the record of the skill you're clicking on.
+    // If it is a subskill, open the parent skill instead.
+    let skillDataPath = dataPath.replace(".data.viewSkill", "");
+    let skill = api.getValue(skillDataPath);
+
+    let skillName = skill.name;
+
+    if (skill.data?.hasSubskills) {
+      // Use regex to extract the parent skill path
+      const parentSkillDataPath = skillDataPath.replace(
+        /\.data\.subSkills\.\d+$/,
+        ""
+      );
+      const parentSkill = api.getValue(parentSkillDataPath);
+      skillName = parentSkill.name;
+    }
+
+    if (skillName.includes("(x2)")) {
+      skillName = skillName.replace("(x2)", "").trim();
+    }
+
+    const record = api.getRecordByTypeAndName("skill", skillName, (record) => {
+      if (record) {
+        api.openRecord(record);
+      }
+    });
+  }
+
+  function onUpdateSkillLevel(value) {
+    const val = parseInt(value, 10);
+    if (isNaN(val)) {
+      return;
+    }
+
+    const pathToSkill = dataPath.replace(".data.lvl", "");
+    const skill = api.getValue(pathToSkill);
+    const stat = skill.data?.stat;
+    const statValue = api.getValue(`data.wizard.${stat}`) || 0;
+
+    // Enforce level limits based on creation method.
+    // Clamp out-of-range values and write the corrected level back so the
+    // cap cannot be bypassed by typing a value directly into the field.
+    const creationMethod = api.getValue("data.wizard.creationMethod");
+    let clampedVal = val;
+    if (creationMethod === "edgerunner") {
+      // Edgerunner: no skill higher than 6 or lower than 2
+      if (clampedVal > 6) clampedVal = 6;
+      if (clampedVal < 2) clampedVal = 2;
+    } else if (creationMethod === "complete") {
+      // Complete Package: no skill higher than 6
+      if (clampedVal > 6) clampedVal = 6;
+      if (clampedVal < 0) clampedVal = 0;
+    }
+
+    const valuesToSet = {
+      [`${pathToSkill}.data.base`]: clampedVal + statValue,
+    };
+    if (clampedVal !== val) {
+      valuesToSet[`${pathToSkill}.data.lvl`] = clampedVal;
+    }
+
+    api.setValues(valuesToSet, () => {
+      // Update skill points / errors for edgerunner & complete modes
+      updateSkillPointsForEdgerunner();
+    });
+  }
+
+  function onUpdateStat(value) {
+    const pathToSkill = dataPath.replace(".data.stat", "");
+    const skill = api.getValue(pathToSkill);
+    let lvl = skill.data?.lvl || 0;
+
+    // value here is the stat name from the onChange event
+    let statName = value;
+    // Get the numeric value of the stat from the character sheet
+    const statValue = api.getValue(`data.wizard.${statName}`) || 0;
+
+    api.setValues({
+      [`${pathToSkill}.data.base`]: lvl + statValue,
+    });
+  }
+</script>
+
+<div
+  style="
+    display: flex;
+    flex-direction: row;
+    gap: 4px;
+    align-items: center;
+    min-width: 150px;
+  "
+>
+  <iconbutton
+    size="sm"
+    variant="default"
+    onclick="onClickSkill()"
+    field="viewSkill"
+    options='[{"label": "View Skill", "value": "view", "icon": "IconTools"}]'
+  ></iconbutton>
+  <div style="min-width: 60px; width: 100%">
+    <namefield
+      placeholder="Skill name..."
+      size="xs"
+      width="100%"
+      field="namefield"
+      variant="unstyled"
+    ></namefield>
+    <!-- Below is used for default skills -->
+    <namefield
+      placeholder="Skill name..."
+      size="xs"
+      width="100%"
+      hidden="true"
+      bold="true"
+      field="name"
+      variant="unstyled"
+      hidden=""
+    ></namefield>
+  </div>
+  <div
+    style="
+      display: flex;
+      flex-direction: row;
+      gap: 4px;
+      align-items: center;
+      margin-left: auto;
+    "
+  >
+    <iconbutton
+      size="sm"
+      field="stat"
+      variant="default"
+      onchange="onUpdateStat(value)"
+      options='[
+      {"label": "INT", "value": "int", "icon": "IconHexagonLetterIFilled"}, 
+      {"label": "REF", "value": "ref", "icon": "IconHexagonLetterRFilled"}, 
+      {"label": "DEX", "value": "dex", "icon": "IconHexagonLetterDFilled"}, 
+      {"label": "TECH", "value": "tech", "icon": "IconHexagonLetterTFilled"}, 
+      {"label": "COOL", "value": "cool", "icon": "IconHexagonLetterCFilled"}, 
+      {"label": "WILL", "value": "will", "icon": "IconHexagonLetterWFilled"}, 
+      {"label": "LUCK", "value": "luck", "icon": "IconHexagonLetterLFilled"}, 
+      {"label": "MOVE", "value": "move", "icon": "IconHexagonLetterMFilled"}, 
+      {"label": "BODY", "value": "body", "icon": "IconHexagonLetterBFilled"}, 
+      {"label": "EMP", "value": "emp", "icon": "IconHexagonLetterEFilled"}
+    ]'
+    ></iconbutton>
+    <numberfield
+      placeholder="0"
+      size="xs"
+      label="LVL"
+      width="50px"
+      field="lvl"
+      variant="tooltip"
+      onchange="onUpdateSkillLevel(value)"
+      minvalue="0"
+      maxvalue="6"
+    ></numberfield>
+    <numberfield
+      placeholder="0"
+      size="xs"
+      label="BASE"
+      width="36px"
+      field="base"
+      variant="tooltip"
+      editable="false"
+      hidecontrols="true"
+    ></numberfield>
+  </div>
+</div>
+<div style="width: calc(100% - 8px); margin-left: 8px">
+  <list
+    listtype="subskill_wizard_list"
+    field="subSkills"
+    variant="striped"
+    hidden="true"
+    height="100%"
+  ></list>
+</div>

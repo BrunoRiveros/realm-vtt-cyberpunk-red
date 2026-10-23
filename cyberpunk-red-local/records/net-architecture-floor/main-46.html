@@ -1,0 +1,192 @@
+<script>
+  function onDrop(type, recordLink) {
+    // Set the record link and make it visible
+    const valuesToSet = {};
+    const floorDataPath = getNearestParentDataPath(dataPath);
+    valuesToSet[`${floorDataPath}.fields.recordLink.hidden`] = false;
+    api.setRecordLink(`${floorDataPath}.data.recordLink`, recordLink, () => {
+      api.setValues(valuesToSet);
+    });
+  }
+
+  function onLinkDelete() {
+    // Link is deleted, so hide it
+    const floorDataPath = getNearestParentDataPath(dataPath);
+    const valuesToSet = {};
+    valuesToSet[`${floorDataPath}.fields.recordLink.hidden`] = true;
+    api.setValues(valuesToSet);
+  }
+
+  function onLoadFloor() {
+    // Set default values on load
+    const floorDataPath = getNearestParentDataPath(dataPath);
+    const floor = api.getValue(floorDataPath);
+
+    if (floor.data?.hidden === undefined) {
+      api.setValue(`${floorDataPath}.data.hidden`, "true");
+    }
+  }
+
+  function onAddBranch() {
+    // Add a branch, hide the button, and unhide the branch box
+    const floorDataPath = getNearestParentDataPath(dataPath);
+    const branches = api.getValue(`${floorDataPath}.data.branches`) || [];
+    branches.push({
+      _id: generateUuid(),
+      data: {
+        branch_left: [],
+        branch_right: [],
+      },
+    });
+
+    const valuesToSet = {};
+    valuesToSet[`${floorDataPath}.data.branches`] = branches;
+    valuesToSet[`${floorDataPath}.fields.branchBox.hidden`] = false;
+    valuesToSet[`${floorDataPath}.fields.addBranchButton.hidden`] = true;
+
+    // Set the branch box to the new branch
+    api.setValues(valuesToSet);
+  }
+
+  function onBranchesChanged() {
+    const floorDataPath = getNearestParentDataPath(dataPath);
+    const branches = api.getValue(`${floorDataPath}.data.branches`) || [];
+    const valuesToSet = {};
+    if (branches.length === 0) {
+      // If no branches, show the add branch button and hide the branch box
+      valuesToSet[`${floorDataPath}.fields.addBranchButton.hidden`] = false;
+      valuesToSet[`${floorDataPath}.fields.branchBox.hidden`] = true;
+    } else {
+      // If there are branches, hide the add branch button and show the branch box
+      valuesToSet[`${floorDataPath}.fields.addBranchButton.hidden`] = true;
+      valuesToSet[`${floorDataPath}.fields.branchBox.hidden`] = false;
+    }
+
+    api.setValues(valuesToSet);
+  }
+</script>
+
+<box field="floorBox" hideforplayers="..hidden">
+  <div
+    style="
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      width: 100%;
+    "
+  >
+    <div style="display: flex; gap: 0px; align-items: center; width: 100%">
+      <box variant="card" size="xs" width="15%">
+        <stringfield
+          field="floor"
+          size="xs"
+          label="Floor"
+          placeholder=""
+          width="100%"
+          textalign="center"
+        ></stringfield>
+      </box>
+
+      <div style="width: 5%">
+        <divider color="red"></divider>
+      </div>
+
+      <box variant="card" size="xs" width="60%">
+        <div style="position: absolute; top: 0; right: 0">
+          <iconbutton
+            size="sm"
+            hideforplayers="true"
+            variant="subtle"
+            onload="onLoadFloor()"
+            field="hidden"
+            color="secondary"
+            options='[{"label": "Show for Players", "value": "true", "icon": "IconEyeOff"}, {"label": "Hide for Players", "value": "false", "icon": "IconEye"}]'
+          ></iconbutton>
+        </div>
+        <div
+          style="
+            display: flex;
+            flex-direction: row;
+            gap: 4px;
+            align-items: flex-end;
+          "
+        >
+          <recordlink
+            onchange="onLinkDelete()"
+            hidden="true"
+            field="recordLink"
+            size="xs"
+          ></recordlink>
+          <stringfield
+            field="encounter"
+            size="xs"
+            multiline="true"
+            label="Encounter"
+            placeholder="Enter floor details or drag a record..."
+            width="100%"
+            textalign="center"
+          ></stringfield>
+        </div>
+      </box>
+
+      <div style="width: 5%">
+        <divider color="red"></divider>
+      </div>
+
+      <box variant="card" size="xs" width="15%">
+        <numberfield
+          field="dv"
+          size="xs"
+          label="DV"
+          placeholder="-"
+          textalign="center"
+          hidecontrols="true"
+          width="100%"
+        ></numberfield>
+      </box>
+    </div>
+  </div>
+</box>
+
+<box field="branchBox" size="xs" hidden="true">
+  <div
+    style="
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      margin-top: 4px;
+      width: 100%;
+    "
+  >
+    <list
+      listtype="net_architecture_branch_list"
+      variant="standard"
+      field="branches"
+      onchange="onBranchesChanged()"
+    ></list>
+  </div>
+</box>
+
+<div
+  style="
+    display: flex;
+    flex-direction: row;
+    gap: 4px;
+    margin-top: 4px;
+    width: 100%;
+    align-items: center;
+    justify-content: center;
+  "
+>
+  <button
+    field="addBranchButton"
+    variant="outline"
+    size="xs"
+    icon="IconArrowsDown"
+    label="Add Branch"
+    color="secondary"
+    onclick="onAddBranch()"
+    hidden="false"
+    hideonlocked="true"
+  ></button>
+</div>

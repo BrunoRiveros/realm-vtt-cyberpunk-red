@@ -1,0 +1,20 @@
+<script>
+  function onFloorsChanged() {
+    updateNetArchitectureBranchButtons(record);
+  }
+</script>
+
+<div style="display: flex; flex-direction: row; gap: 4px">
+  <list
+    listtype="net_architecture_floor_list"
+    variant="standard"
+    field="branch_left"
+    onchange="onFloorsChanged()"
+  ></list>
+  <list
+    listtype="net_architecture_floor_list"
+    variant="standard"
+    field="branch_right"
+    onchange="onFloorsChanged()"
+  ></list>
+</div>

@@ -1,0 +1,1817 @@
+<script>
+  // Provided cyber-body silhouette SVG. The original full-canvas background
+  // rect is omitted so the canvas theme background shows through; the figure's
+  // fill colors are re-themed at draw time (see drawBodyImage): #888 ->
+  // primary, #FCFCFC / #FDFDFD -> surface.
+  const BODY_SVG = `<svg version="1.1" viewBox="0 0 1024 1536" width="1024" height="1536" xmlns="http://www.w3.org/2000/svg">
+<path transform="translate(507,31)" d="m0 0h10l16 3 16 8 10 10 6 11 4 12 2 16-1 18 6-1 3 3 1 3v9l-3 17-6 15-5 4-4 1-3 21-2 24v8l6 9 10 8 15 9 21 12 16 10 7 3 24 2 16 4 13 7 12 11 9 14 5 11 5 21 1 11v17l-3 23 1 7 7 24 5 24 7 38 5 12 12 17 7 11 7 16 4 15 7 41 5 26 7 26 13 38 4 8 18 13 11 8 6 7 6 12 9 11 7 8 4 5-1 6-4 3h-9l-9-5-7-8-3-2 1 14 8 31 3 16v14l-4 5h-6l-5-6-4-14-5-19 4 29v17l-4 5h-7l-3-3-4-16v3l-1 9-4 3-7-1-4-7-5-23 1 14-3 5-5 1-5-4-4-13-5-40-5-25-1-8v-30l-5-16-6-15-10-21-14-24-15-25-12-23-7-20-5-22-5-28-3-12-11-19-8-17-9-25-5-20-14 41-9 25-4 15-1 7v29l1 9v25l-1 4v10l6 23 7 26 9 45 6 29 10 41 6 34 4 34 2 25 1 24v14l-2 32-2 23v20l6 40 2 23 3 10 11 29 8 26 4 22 1 12v15l-5 66-2 39v38l2 24 4 16 3 9 1 19 16 32 8 12 9 10 8 9 8 17v9l-4 2-1 5-4 3h-4l-1 4-4 2h-7l-1 3-4 2-9-1-3-1-4 4-6 2-8-1-8-4-6-9-2-9-4-2-6-8-2-7-1-17-3-7-9-7-4-6-1-3v-15l3-14 1-9-3-12 1-12 1-5-1-16-4-27-8-37-8-29-8-21-9-20-7-20-4-22-1-13v-18l1-17v-24l-3-13-8-16-9-29-7-33-8-46-6-27-6-19-10-27-7-19-8-26-7-30-3-17-15-1-1 11-8 36-9 29-8 22-10 26-8 30-6 30-7 42-6 25-5 16-6 15-6 13-1 6v32l1 27-2 21-4 19-6 17-13 29-8 24-11 47-5 27-2 16v8l1 6v13l-2 7v11l3 15v14l-4 8-9 7h-2l-3 11-1 15-3 8-9 10-4 11-4 5-8 4h-11l-6-4-3-1-2 1h-8l-4-2-1-2-8-1-3-3v-2l-5-1-3-3-2-4-3-3v-7l7-16 6-8 8-8 9-13 10-18 9-18v-16l6-19 2-12 2-31v-34l-2-47-3-46v-24l3-22 5-20 10-30 8-21 2-15 3-26 3-19v-28l-2-24-1-20v-26l2-35 4-40 5-32 8-36 6-24 12-59 8-29 6-20 1-12-2-12 1-20 1-11v-24l-3-17-11-30-10-30-2-7v-5h-2l-1 8-8 26-9 21-11 21-4 8-7 36-5 22-5 15-8 18-10 18-17 28-10 18-8 16-10 24-2 7v25l-3 22-4 18-5 37-3 12-4 6-5 1-5-5v-12l1-10-6 31-4 6-7 1-4-4v-17l-4 20-4 5h-7l-4-5-1-8 4-33v-3l-5 22-3 10-5 5h-5l-4-4-1-2v-10l4-24 7-26 2-15-12 12-8 4h-9l-4-3-1-5 7-8 9-12 7-9 6-11 9-8 22-15 5-4 6-14 11-34 6-24 11-62 5-17 5-12 7-13 13-18 5-10 3-13 7-39 5-21 6-19-1-11-1-7v-32l4-20 5-13 7-13 9-10 9-8 12-6 16-4 24-2 12-6 18-11 19-11 12-8 8-7 4-6v-19l-2-25-2-12-5-1-5-5-5-13-3-15v-11l3-5 5-1 2 1-1-6v-17l3-15 5-12 8-11 10-8 13-6 8-2z" fill="#FCFCFC"/>
+<path transform="translate(507,31)" d="m0 0h10l16 3 16 8 10 10 6 11 4 12 2 16-1 18 6-1 3 3 1 3v9l-3 17-6 15-5 4-4 1-3 21-2 24v8l6 9 10 8 15 9 21 12 16 10 7 3 24 2 16 4 13 7 12 11 9 14 5 11 5 21 1 11v17l-3 23 1 7 7 24 5 24 7 38 5 12 12 17 7 11 7 16 4 15 7 41 5 26 7 26 13 38 4 8 18 13 11 8 6 7 6 12 9 11 7 8 4 5-1 6-4 3h-9l-9-5-7-8-3-2 1 14 8 31 3 16v14l-4 5h-6l-5-6-4-14-5-19 4 29v17l-4 5h-7l-3-3-4-16v3l-1 9-4 3-7-1-4-7-5-23 1 14-3 5-5 1-5-4-4-13-5-40-5-25-1-8v-30l-5-16-6-15-10-21-14-24-15-25-12-23-7-20-5-22-5-28-3-12-11-19-8-17-9-25-5-20-14 41-9 25-4 15-1 7v29l1 9v25l-1 4v10l6 23 7 26 9 45 6 29 10 41 6 34 4 34 2 25 1 24v14l-2 32-2 23v20l6 40 2 23 3 10 11 29 8 26 4 22 1 12v15l-5 66-2 39v38l2 24 4 16 3 9 1 19 16 32 8 12 9 10 8 9 8 17v9l-4 2-1 5-4 3h-4l-1 4-4 2h-7l-1 3-4 2-9-1-3-1-4 4-6 2-8-1-8-4-6-9-2-9-4-2-6-8-2-7-1-17-3-7-9-7-4-6-1-3v-15l3-14 1-9-3-12 1-12 1-5-1-16-4-27-8-37-8-29-8-21-9-20-7-20-4-22-1-13v-18l1-17v-24l-3-13-8-16-9-29-7-33-8-46-6-27-6-19-10-27-7-19-8-26-7-30-3-17-15-1-1 11-8 36-9 29-8 22-10 26-8 30-6 30-7 42-6 25-5 16-6 15-6 13-1 6v32l1 27-2 21-4 19-6 17-13 29-8 24-11 47-5 27-2 16v8l1 6v13l-2 7v11l3 15v14l-4 8-9 7h-2l-3 11-1 15-3 8-9 10-4 11-4 5-8 4h-11l-6-4-3-1-2 1h-8l-4-2-1-2-8-1-3-3v-2l-5-1-3-3-2-4-3-3v-7l7-16 6-8 8-8 9-13 10-18 9-18v-16l6-19 2-12 2-31v-34l-2-47-3-46v-24l3-22 5-20 10-30 8-21 2-15 3-26 3-19v-28l-2-24-1-20v-26l2-35 4-40 5-32 8-36 6-24 12-59 8-29 6-20 1-12-2-12 1-20 1-11v-24l-3-17-11-30-10-30-2-7v-5h-2l-1 8-8 26-9 21-11 21-4 8-7 36-5 22-5 15-8 18-10 18-17 28-10 18-8 16-10 24-2 7v25l-3 22-4 18-5 37-3 12-4 6-5 1-5-5v-12l1-10-6 31-4 6-7 1-4-4v-17l-4 20-4 5h-7l-4-5-1-8 4-33v-3l-5 22-3 10-5 5h-5l-4-4-1-2v-10l4-24 7-26 2-15-12 12-8 4h-9l-4-3-1-5 7-8 9-12 7-9 6-11 9-8 22-15 5-4 6-14 11-34 6-24 11-62 5-17 5-12 7-13 13-18 5-10 3-13 7-39 5-21 6-19-1-11-1-7v-32l4-20 5-13 7-13 9-10 9-8 12-6 16-4 24-2 12-6 18-11 19-11 12-8 8-7 4-6v-19l-2-25-2-12-5-1-5-5-5-13-3-15v-11l3-5 5-1 2 1-1-6v-17l3-15 5-12 8-11 10-8 13-6 8-2zm-41 148 1 24 1 16v25l-3 9-5 7-10 6-10 4h-2l16-8 8-7 3-7 1-5v-16l-1-7-5 5-11 9-22 13-17 10-16 9-2 2 6 2 19 3 44 2 20 2 10 3 9 7 4 3-6-2-7-6-9-3-17-2-40-2h-8v2l-5 2-11 8-10 9-10 13-8 16-3 10 1-9 5-12 7-11 11-12 9-8 10-6 3-2-20-4-7-2h-16l-18 3-16 8-8 7-8 9-8 15-5 16-2 11-1 12v13l2 18 2 10v5l-2-3-7 22-6 29-6 33-4 12-8 12-10 14-9 19-4 13-5 26-7 39-6 25-10 32-3 10 16 3 12 6 3 1-1 2-8-5-11-4-5-1h-7l-3 5v2l9 2 3 2-14-3-15 11-16 11-7 8-7 13-8 9-6 8-4 4 1 4 7 1 8-4 6-6v-4l3 1 8-7 4-5 1 4h3v2h-5l-2 5-3 19-7 26-3 18v13l2 2 5-1 3-8 5-22 7-20-1-2 7 3-2 1-5 29-2 17v12l3 4 4-1 3-7 6-31 4-20-3-2h10l-3 2-3 25-2 18v10l2 2 4-1 3-6 5-24 3-19v-6h-3v-2h7l7-2-6 4-1 26-1 14 2 4 4-1 3-7 4-25 3-22 5-25 1-8v-22l-2-6-8-5-4-2 6 1 8 5 8-22 12-25 9-17 11-18 12-20 9-17 8-21 6-25 6-31-1-3-11 11-8 5 5-5 8-7 10-12 12-21 10-24 8-25 4-17v-30l-2-10-5-9h2v-9h2l1 10 4 10 7 12 10 13 9 8 13 7 14 3h15l40-7v2l-8 1-25 5-8 1h-16l-13-3-12-6-12-11-8-10-4-6h-1l1 30 7 26 8 24 10 26 3 14 1 10v15l-2 23v17l2 9 9 10 13 14 10 15 6 10h1l1-9v-18l-1-11v-47l-4-17-2-8v-10l4-16 11-25 6-8 9-7 11-5 13-3h9l5 1v2l-2-1h-15l-13 4-11 6-5 4-7 11-1 3v9l3 14 5 12 3 4-1 6-2 8v21l4 13 2 5-3 7-1 4v17l3 18 6 20 5 13-3-4-7-19-4-17-2-13v-12l4-16-4-8-2-8v-20l3-11v-4l-5-8-4-12-2-14-2 2-6 18-2 9v11l5 18 1 7v48l1 11v12l-2 18 7 21 2 10-9-26-8-16-9-14-9-11-14-14-5 20-9 31-9 43-8 37-7 28-7 38-5 46-2 30v43l3 41v18l-3 21-2 13-2 25-3 12-10 26-9 29-4 20-1 9v32l4 66v73l-3 25-6 19v11l3-3 2-3-2 6-10 19-8 16-8 14-12 14-7 8-7 16h5l7-11v3l-5 8-1 4 6 3 7-12 2-4h2l-8 15v2l5 2 2 3 7-13 4-6v3l-7 14 7 1v5l-1 1h-9v5l4 2 6-1 2-1 3-10 7-11 2-4v-3l3 1 2-7h2l-5 12-6 9 7-1 7 3v5l-3 3-15-1v5l5 4 7 1 8-3 5-5 5-12 7-7 3-7 3-24 4-7v-2h2l1 2 7-6 3-9-1-12-3-14-2 3-3 14v3h-2l5-23 4-12 1-11-5-25v-19l7-58 2-28 2-44 3-25 5-20 9-25 8-16 6-11 8-11 2-1-10 15-10 19-9 23-6 21-3 17-2 29-2 40-4 39-5 44 1 14 2-2 4-26 9-41 8-29 8-21 11-25 5-15 4-20 1-11v-23l-1-15v-25l1-10 8-15 7-19 7-27 10-57 6-29 8-27 15-40 9-28 9-38 2-11v-4l-12-6-12-12-6 42-13 71-4 31-3 34-4 25-5 23-6 20-5 12-7 11-5 4-8 3-5 21-5 12-10 12-7 13 4-11 6-8 7-10 4-10 6-29v-8l-3-10-4-5-9-5-11-1-8 3-5 5-5 10-4 18-1 9v35l-2-19v-12l3-22 4-14 6-9 6-4 3-1h12l9 4 5 4 4 7 1 4v18l6-1 8-8 9-19 7-26 5-24 3-21 4-44 7-43 9-49 5-34v-9l-6-13-10-25-10-17-9-12-9-11-5-5 4 2 8 8 11 15 9 15 8 16 8 21 6 10 9 10 10 6 9 2h10l10-3 9-7 9-10 8-17 6-16 10-19 12-17 9-10 7-7-4 6-10 11-9 13-11 19-6 14-6 15-3 6 3 27 7 43 9 51 4 38 4 36 6 31 7 24 7 16 6 8 5 4h5v-19l5-10 5-4 10-4h11l8 4 4 5 4 9 3 12 2 13v24l-2 16v-11l1-11v-12l-3-22-4-13-6-9-9-4h-7l-11 4-5 4-4 8-1 4v12l5 25 5 12 8 11 6 10 2 7-7-13-10-13-6-15-3-15-1-2-9-4-7-8-7-14-6-19-7-31-4-28-4-43-6-39-7-39-5-32-2-20-14 14-11 6 1 9 8 37 9 30 11 29 7 19 7 25 8 41 7 40 6 24 7 21 9 19 4 2 9 12 10 19 8 20 7 22 4 20 2 21 2 47 3 34 4 34 1 12v13l-5 26v11l6 21 1 5v9l-4-18h-1l-4 21v7l3 8 7 6h3l4 9 2 22 4 8 7 7 5 13 7 5 3 1h7l6-3 1-1v-6l-15 1-3-4 2-5 2-1h10l-2-5-4-5-4-11h2l2 7 3 1 3 7 5 9 3 10 3 2h8l2-2v-4h-8l-3-3 1-3 7-2-4-8-4-7 1-1 7 11 7 14h6l2-2-1-4h-7v-4l4-2-2-6-6-10 5 5 8 14 2 4 4-2-1-7h-2v2h-3l4-4-2-6-4-6-1-3 4 4 5 8 4-2-8-17-13-13-9-13-12-23-12-24v-2l4 5 1-8-4-14-4-16-1-11v-67l4-58 2-26v-23l-3-22-5-19-11-32-7-18-2-15-2-22-4-24-1-20 4-54v-32l-3-40-3-27-5-30-7-31-8-33-9-48-6-25-9-32-2-7-16 16-10 13-11 18-8 20-4 13 1-8 6-18 2-4-2-24 2-24v-11l-1-13v-11l2-15 5-16v-13l-4-15-5-13h-1l-3 16-5 13-4 6 3 11v23l-3 10-3 6 3 10 1 7-1 17-4 19-8 22-3 6v-3l7-18 5-19 2-15v-11l-3-12-3-2h-31l-1-2 34 1 4-8 3-16v-8l-3-14-1-5 6-9 4-12 2-18-6-12-8-7-14-7-8-2h-14l-3 1v-2l6-1h8l16 4 12 7 5 4 6 10 9 20 5 19v12l-5 17-2 13v10l1 14v12l-2 19v15l1 9 3-3 9-15 9-11 14-15 4-5 2-6 1-7v-11l-2-20v-23l3-18 8-24 9-24 8-26 2-9v-27l-4 4-8 11-9 9-14 8-10 3-7 1h-14l-23-4-14-3h-3v-2l39 7h15l16-4 11-6 11-10 11-15 8-15 2-13h2v8h2l-6 12-1 3-1 24 2 17 9 32 10 24 10 19 11 15 15 15-11-8-7-8-1 2 8 43 6 21 9 20 11 20 17 28 13 24 10 23 6 18 10-6 4-1v2l-5 1-8 5-2 13 1 20 6 32 4 33 3 14 3 4 4-1v-12l-1-10-1-22-8-2v-2l15 4-2 1 1 12 5 29 4 13 5 2 2-2v-11l-5-42-3-1 9-2v2h-2l1 9 10 47 3 4 4-1 2-3v-10l-4-31-3-17h-3v-2l6-1 2-1-1 3 7 19 7 28 2 3h5l2-4-1-12-5-25-5-19-3-22-1-1h-5v-2l3-1-2-4 5 5 9 8h2l3 5 7 6 6 2 6-1 1-5-8-8-5-8-5-5-5-8-4-8-9-8-16-11-8-6h-8l-9 4 3-3 12-4-3-6h-7l-12 3-12 6-3 2 4-4 10-5 11-3 8-1-3-10-12-38-6-25-9-54-6-21-8-16-7-10-10-15-5-13-9-49-7-27-3-8-2 3v2h-2l3-12 3-20v-25l-3-19-6-16-6-11-11-12-11-7-9-4-18-3h-18l-15 4-20 2-42 2-16 2-11 4-7 6-5 2v-2l5-2 7-6 7-3 12-2 12-1 46-2 15-2 10-3-4-3-17-10-22-13-16-10-10-8-5-5v28l4 8 8 7 16 8-10-3-11-6-6-7-3-7-1-6v-16l3-41v-5l-4 5-10 12-14 10-6 2-7 1h-8l-9-2-12-7-13-13-5-8z" fill="#888"/>
+<path transform="translate(502,35)" d="m0 0h19l13 3 13 7 9 9 8 16 3 16v17l-1 14-1 3 3-3 3-5 3-1 2 2v14l-4 17-5 10-5 1 1-10 5-8-1-9-1 2v8l-2 1v-2h-2l-1 9-5 24-4 8-7 9-4 5-11 9-8 4-3 1h-15l-9-3-9-6-12-12-8-12-4-14-5-25-1 5-2-2v-9l-1 2v8l4 6 1 11-4-1-4-8-4-13-1-6v-14l5-1 3 6v2h2l-1-10v-26l3-14 7-14 8-9 11-7 12-4z" fill="#FDFDFD"/>
+<path transform="translate(415,1036)" d="m0 0h1v31l1 15v23l-2 17-5 21-8 20-9 20-8 24-9 36-7 35-2 15-2 2-1-14 5-44 4-39 3-58 2-18 6-25 8-22 11-23 8-12z" fill="#FDFDFD"/>
+<path transform="translate(601,1034)" d="m0 0 5 5 7 10 8 16 8 19 5 15 6 25 2 19 2 47 3 37 5 44v22l-2-2-5-32-8-36-7-25-8-22-12-27-6-21-3-22v-28l1-17v-16z" fill="#FDFDFD"/>
+<path transform="translate(317,393)" d="m0 0 2 1-8 25-7 28-4 25v24l1 14-1 18-3 14-10 19-12 31-12 33-17 44-3 7h-2l1-6 19-50 18-49 12-25 3-7 2-9 1-30-1-6v-20l4-26 8-32 7-20z" fill="#888"/>
+<path transform="translate(702,393)" d="m0 0 3 2 5 14 7 25 5 27 1 7v24l-2 13 1 3v17l3 15 8 16 7 16 19 52 11 29 7 19-1 4-9-21-18-48-16-43-11-23-3-11-1-19h-1l1-10 1-7v-28l-4-23-6-25-7-22z" fill="#888"/>
+<path transform="translate(667,1046)" d="m0 0h2l7 28 4 22 3 24v48l-1 26v71l1 20-2 1-2-14-1-16v-55l1-25v-59l-3-24-9-45z" fill="#888"/>
+<path transform="translate(349,1045)" d="m0 0h1v7l-8 40-3 21-1 12v121l-2 31-1 8-2 1v-12l1-16v-127l2-24 5-30 7-31z" fill="#888"/>
+<path transform="translate(630,714)" d="m0 0h2l5 25 6 37 4 36 2 35v78l4 16 3 9-1 4-4-8-5-17-1-9v-84l-3-39-5-37-7-44z" fill="#888"/>
+<path transform="translate(386,714)" d="m0 0h2l-2 16-8 52-4 40-1 19-1 85-4 15-5 13-2-1 6-20 2-13v-61l1-31 3-35 7-49 5-26z" fill="#888"/>
+<path transform="translate(509,304)" d="m0 0h2l1 42v38l4 8 9 8 4 2v2l-5-1-8-6-6-8-10 11-7 4h-3v-2l9-6 4-2 2-4 3-9v-25z" fill="#888"/>
+<path transform="translate(368,337)" d="m0 0h2l-1 3-16 12-12 11-8 8-7 10-6 9-1-3 6-11 8-10 13-13 17-13z" fill="#888"/>
+<path transform="translate(541,206)" d="m0 0 1 4-8 31-8 28-4 10-3 2 2-9 10-34 9-31z" fill="#888"/>
+<path transform="translate(479,206)" d="m0 0 2 2 16 59 4 14-3-1-5-14-8-29-6-25z" fill="#888"/>
+<path transform="translate(413,276)" d="m0 0h2l-1 3-11 7-11 10-10 13-8 16-3 10-2 1v-7l5-13 6-10 8-10 10-10 13-9z" fill="#888"/>
+<path transform="translate(650,337)" d="m0 0 5 2 14 10 11 10 5 5 8 9 8 14-1 3-10-15-12-14-12-10-16-12z" fill="#888"/>
+<path transform="translate(604,276)" d="m0 0 5 1 11 7 8 7v2h2l9 11 8 14 4 11v7l-2-1-4-13-7-14-11-13-11-10-12-8z" fill="#888"/>
+<path transform="translate(604,383)" d="m0 0 6 1 3 2-1 5-3 3-3 1h-7l-4-3 1-5 4-3z" fill="#888"/>
+<path transform="translate(413,383)" d="m0 0 8 2 3 3-1 5-3 2h-7l-6-3-1-5 3-3z" fill="#888"/>
+<path transform="translate(509,445)" d="m0 0h2v58h-2l-1-7v-42z" fill="#888"/>
+<path transform="translate(509,507)" d="m0 0 2 1v45l-2 1-1-4v-34z" fill="#888"/>
+<path transform="translate(231,707)" d="m0 0h1l-1 9-5 10-9 9-11 5h-8v-2l12-3 11-8 6-10z" fill="#888"/>
+<path transform="translate(785,708)" d="m0 0h2l5 12 4 6 9 8 13 4v2l-10-1-10-6-8-9-4-9z" fill="#888"/>
+<path transform="translate(437,417)" d="m0 0 2 1 7 16 7 10 6 6-1 2-8-6-7-11-5-10-2-7z" fill="#888"/>
+<path transform="translate(580,417)" d="m0 0h2l-1 7-10 19-8 8-4 1 1-3 6-5 9-15z" fill="#888"/>
+<path transform="translate(514,506)" d="m0 0h31l6 1v2h-37z" fill="#888"/>
+<path transform="translate(507,564)" d="m0 0h6l-1 2-1 31-2 2z" fill="#888"/>
+<path transform="translate(473,506)" d="m0 0h31l2 2-1 1h-38v-2z" fill="#888"/>
+<path transform="translate(693,1431)" d="m0 0h7l5 5-3 2-10 1-2-2 1-5z" fill="#FDFDFD"/>
+<path transform="translate(316,1431)" d="m0 0h7l3 2-1 4-2 2-9-1-3-1 2-4z" fill="#FDFDFD"/>
+<path transform="translate(472,557)" d="m0 0h30l1 2-4 1h-29v-2z" fill="#888"/>
+<path transform="translate(391,417)" d="m0 0 3 4 9 13 7 6-1 2-6-4-7-7-6-12z" fill="#888"/>
+<path transform="translate(626,418)" d="m0 0 1 3-4 8-8 9-7 4 2-4 9-9z" fill="#888"/>
+<path transform="translate(317,527)" d="m0 0 2 1-7 8-8 6-7 2 1-3 9-5z" fill="#888"/>
+<path transform="translate(700,526)" d="m0 0 7 6 8 6 7 4-1 2-8-3-10-9-3-4z" fill="#888"/>
+<path transform="translate(204,750)" d="m0 0h17l13 3v1l-30-2z" fill="#888"/>
+<path transform="translate(798,750)" d="m0 0h15l-1 2-20 2h-8l2-2z" fill="#888"/>
+<path transform="translate(603,386)" d="m0 0 7 1-1 4-2 1h-8v-4z" fill="#FDFDFD"/>
+<path transform="translate(411,386)" d="m0 0 8 1 3 3-2 2h-8l-3-2z" fill="#FDFDFD"/>
+<path transform="translate(724,1433)" d="m0 0 8 1 3 1-1 4-1 1h-6z" fill="#FDFDFD"/>
+<path transform="translate(623,441)" d="m0 0 1 3-4 8-8 7v-3l7-8z" fill="#888"/>
+<path transform="translate(290,1433)" d="m0 0 1 2-2 5h-5l-2-2v-4h6z" fill="#FDFDFD"/>
+<path transform="translate(395,442)" d="m0 0 3 3 7 10 2 4-5-3-6-8z" fill="#888"/>
+<path transform="translate(275,1426)" d="m0 0h2v2l4-1-2 7-5-1v-6z" fill="#FDFDFD"/>
+<path transform="translate(715,1433)" d="m0 0h5l2 3-7 2-2-3z" fill="#FDFDFD"/>
+<path transform="translate(509,555)" d="m0 0 5 2 1 3-7-1-4 1 1-3z" fill="#888"/>
+<path transform="translate(295,1433)" d="m0 0h6l1 4h-6l-2-2z" fill="#FDFDFD"/>
+</svg>`;
+
+  function onLoad() {
+    // Accumulate everything we need to initialize in one batch.
+    const valuesToSet = {};
+
+    // If we haven't set the max slots yet, set them now
+    if (
+      record?.data?.neuralLinkOptionSlots === undefined ||
+      record?.data?.leftCyberEyeOptionSlots === undefined ||
+      record?.data?.rightCyberEyeOptionSlots === undefined ||
+      record?.data?.cyberaudioSuiteOptionSlots === undefined ||
+      record?.data?.chipwareOptionSlots === undefined ||
+      record?.data?.internalOptionSlots === undefined ||
+      record?.data?.externalOptionSlots === undefined ||
+      record?.data?.rightCyberArmOptionSlots === undefined ||
+      record?.data?.leftCyberArmOptionSlots === undefined ||
+      record?.data?.rightCyberFingerOptionSlots === undefined ||
+      record?.data?.leftCyberFingerOptionSlots === undefined ||
+      record?.data?.leftCyberLegOptionSlots === undefined ||
+      record?.data?.rightCyberLegOptionSlots === undefined ||
+      record?.data?.fashionwareOptionSlots === undefined ||
+      record?.data?.internalCyberwareOptionSlots === undefined ||
+      record?.data?.externalCyberwareOptionSlots === undefined
+    ) {
+      // Set defaults, but will need to check on equip of foundational cyberware to update
+      valuesToSet["data.neuralLinkOptionSlots"] = 5;
+      valuesToSet["data.leftCyberEyeOptionSlots"] = 3;
+      valuesToSet["data.rightCyberEyeOptionSlots"] = 3;
+      valuesToSet["data.cyberaudioSuiteOptionSlots"] = 3;
+      valuesToSet["data.chipwareOptionSlots"] = 1;
+      valuesToSet["data.internalOptionSlots"] = 7;
+      valuesToSet["data.externalOptionSlots"] = 7;
+      valuesToSet["data.rightCyberArmOptionSlots"] = 4;
+      valuesToSet["data.leftCyberArmOptionSlots"] = 4;
+      valuesToSet["data.rightCyberFingerOptionSlots"] = 5;
+      valuesToSet["data.leftCyberFingerOptionSlots"] = 5;
+      valuesToSet["data.leftCyberLegOptionSlots"] = 3;
+      valuesToSet["data.rightCyberLegOptionSlots"] = 3;
+      valuesToSet["data.fashionwareOptionSlots"] = 7;
+      valuesToSet["data.internalCyberwareOptionSlots"] = 7;
+      valuesToSet["data.externalCyberwareOptionSlots"] = 7;
+    }
+
+    // First-open / migration for the canvas body navigator. Runs when no node
+    // is selected OR the stored id is no longer valid (e.g. the legacy "head"
+    // node), so a tab re-activation never resets the user's chosen location.
+    const nodeIds = cyberNodes().map((n) => n.id);
+    const selectedNode = record?.data?.cyberwareSelectedNode;
+    if (selectedNode === undefined || nodeIds.indexOf(selectedNode) === -1) {
+      valuesToSet["data.cyberwareSelectedNode"] = "neuralLink";
+      cyberNodes().forEach((n) => {
+        valuesToSet["fields." + n.panel + ".hidden"] = n.id !== "neuralLink";
+      });
+    }
+
+    if (Object.keys(valuesToSet).length > 0) {
+      api.setValues(valuesToSet, () => {
+        paintBody();
+      });
+    } else {
+      paintBody();
+    }
+  }
+
+  function onDropItem(recordLink) {
+    const item = recordLink?.value;
+
+    const isCyberware = item?.data?.type === "cyberware";
+
+    if (!isCyberware) {
+      return;
+    }
+
+    // Add the cyberware to inventory and set the attunement hidden field to visible if requires attunement
+    const itemToAdd = {
+      ...item,
+      icon: "IconBox",
+      data: {
+        ...item?.data,
+        // Track old ID for count tracking
+        fromId: item._id,
+        // Default count to 1
+        count: 1,
+        // Mark it as equipped
+        carried: "equipped",
+      },
+      fields: {
+        ...item?.fields,
+      },
+    };
+
+    // If this is cyberware, and we haven't set the active status, set it to true
+    const activeStatus = item.data?.active;
+    if (activeStatus === undefined || activeStatus === null) {
+      itemToAdd.data.active = true;
+    }
+    // If it's foundational cyberware, we need to update the option slots
+    if (
+      item.data?.cyberwareInstallSlot === "foundational" &&
+      // Hands and feet go in arms and legs
+      item.data?.foundationalSlot !== "left hand" &&
+      item.data?.foundationalSlot !== "right hand" &&
+      item.data?.foundationalSlot !== "left foot" &&
+      item.data?.foundationalSlot !== "right foot"
+    ) {
+      const optionSlots = item.data?.optionSlots;
+      const foundationalSlot = item.data?.foundationalSlot;
+      const leftOrRight = foundationalSlot.toLowerCase().includes("left")
+        ? "left"
+        : "right";
+      const optionSlotValue = getOptionSlotValue(
+        foundationalSlot,
+        leftOrRight
+      );
+      if (optionSlotValue.fieldName) {
+        itemToAdd.data[`${optionSlotValue.fieldName}`] =
+          optionSlots || optionSlotValue.defaultValue;
+      }
+    } else {
+      // On the cyberware list, we'll store if it's left or right, if required
+      let leftOrRight = item.data?.cyberLocation;
+      if (!leftOrRight) {
+        if (item.data?.cyberwareInstallSlot === "cyberoptics") {
+          // Determine which eye we should use
+          const leftEye = (record?.data?.inventory || []).filter(
+            (item) =>
+              item.data?.cyberwareInstallSlot === "foundational" &&
+              item.data?.foundationalSlot === "left cybereye" &&
+              item.data?.carried === "equipped" &&
+              item.data?.type === "cyberware"
+          )?.[0];
+          const rightEye = (record?.data?.inventory || []).filter(
+            (item) =>
+              item.data?.cyberwareInstallSlot === "foundational" &&
+              item.data?.foundationalSlot === "right cybereye" &&
+              item.data?.carried === "equipped" &&
+              item.data?.type === "cyberware"
+          )?.[0];
+          const numSlotsLeftEye =
+            record?.data?.usedLeftCyberEyeOptionSlots || 0;
+          const numSlotsRightEye =
+            record?.data?.usedRightCyberEyeOptionSlots || 0;
+          if (!leftEye && !rightEye) {
+            leftOrRight = "right";
+          } else if (!rightEye) {
+            leftOrRight = "left";
+          } else if (!leftEye) {
+            leftOrRight = "right";
+          } else if (numSlotsLeftEye < numSlotsRightEye) {
+            leftOrRight = "left";
+          } else {
+            leftOrRight = "right";
+          }
+          itemToAdd.data.cyberLocation = leftOrRight;
+          if (!itemToAdd.fields) itemToAdd.fields = {};
+          itemToAdd.fields.moveLeftBtn = {
+            hidden: leftOrRight === "left" ? true : false,
+          };
+          itemToAdd.fields.moveRightBtn = {
+            hidden: leftOrRight === "right" ? true : false,
+          };
+        } else if (item.data?.cyberwareInstallSlot === "cyberfingers") {
+          // Determine which hand we should use
+          const leftHand = (record?.data?.inventory || []).filter(
+            (item) =>
+              item.data?.cyberwareInstallSlot === "foundational" &&
+              item.data?.foundationalSlot === "left hand" &&
+              item.data?.carried === "equipped" &&
+              item.data?.type === "cyberware"
+          )?.[0];
+          const rightHand = (record?.data?.inventory || []).filter(
+            (item) =>
+              item.data?.cyberwareInstallSlot === "foundational" &&
+              item.data?.foundationalSlot === "right hand" &&
+              item.data?.carried === "equipped" &&
+              item.data?.type === "cyberware"
+          )?.[0];
+          const numSlotsLeftHand =
+            record?.data?.usedLeftCyberFingerOptionSlots || 0;
+          const numSlotsRightHand =
+            record?.data?.usedRightCyberFingerOptionSlots || 0;
+          if (!leftHand && !rightHand) {
+            leftOrRight = "right";
+          } else if (!rightHand) {
+            leftOrRight = "left";
+          } else if (!leftHand) {
+            leftOrRight = "right";
+          } else if (numSlotsLeftHand < numSlotsRightHand) {
+            leftOrRight = "left";
+          } else {
+            leftOrRight = "right";
+          }
+          itemToAdd.data.cyberLocation = leftOrRight;
+          if (!itemToAdd.fields) itemToAdd.fields = {};
+          itemToAdd.fields.moveLeftBtn = {
+            hidden: leftOrRight === "left" ? true : false,
+          };
+          itemToAdd.fields.moveRightBtn = {
+            hidden: leftOrRight === "right" ? true : false,
+          };
+        } else if (
+          item.data?.cyberwareInstallSlot === "cyberarms" ||
+          item.data?.foundationalSlot === "right hand" || // Hands use slots in the arm
+          item.data?.foundationalSlot === "left hand"
+        ) {
+          // Determine which arm we should use
+          const leftArm = (record?.data?.inventory || []).filter(
+            (item) =>
+              item.data?.cyberwareInstallSlot === "foundational" &&
+              item.data?.foundationalSlot === "left cyberarm" &&
+              item.data?.carried === "equipped" &&
+              item.data?.type === "cyberware"
+          )?.[0];
+          const rightArm = (record?.data?.inventory || []).filter(
+            (item) =>
+              item.data?.cyberwareInstallSlot === "foundational" &&
+              item.data?.foundationalSlot === "right cyberarm" &&
+              item.data?.carried === "equipped" &&
+              item.data?.type === "cyberware"
+          )?.[0];
+          const numSlotsLeftArm =
+            record?.data?.usedLeftCyberArmOptionSlots || 0;
+          const numSlotsRightArm =
+            record?.data?.usedRightCyberArmOptionSlots || 0;
+          if (!leftArm && !rightArm) {
+            leftOrRight = "right";
+          } else if (!rightArm) {
+            leftOrRight = "left";
+          } else if (!leftArm) {
+            leftOrRight = "right";
+          } else if (numSlotsLeftArm < numSlotsRightArm) {
+            leftOrRight = "left";
+          } else {
+            leftOrRight = "right";
+          }
+          itemToAdd.data.cyberLocation = leftOrRight;
+          if (!itemToAdd.fields) itemToAdd.fields = {};
+          itemToAdd.fields.moveLeftBtn = {
+            hidden: leftOrRight === "left" ||
+              item.data?.foundationalSlot === "left hand" ||
+              item.data?.foundationalSlot === "right hand"
+                ? true
+                : false
+          };
+          itemToAdd.fields.moveRightBtn = {
+            hidden: leftOrRight === "right" ||
+              item.data?.foundationalSlot === "left hand" ||
+              item.data?.foundationalSlot === "right hand"
+                ? true
+                : false
+          };
+        } else if (
+          item.data?.cyberwareInstallSlot === "cyberlegs" ||
+          item.data?.foundationalSlot === "right foot" || // Feet use slots in the leg
+          item.data?.foundationalSlot === "left foot"
+        ) {
+          // Determine which leg we should use
+          const leftLeg = (record?.data?.inventory || []).filter(
+            (item) =>
+              item.data?.cyberwareInstallSlot === "foundational" &&
+              item.data?.foundationalSlot === "left cyberleg" &&
+              item.data?.carried === "equipped" &&
+              item.data?.type === "cyberware"
+          )?.[0];
+          const rightLeg = (record?.data?.inventory || []).filter(
+            (item) =>
+              item.data?.cyberwareInstallSlot === "foundational" &&
+              item.data?.foundationalSlot === "right cyberleg" &&
+              item.data?.carried === "equipped" &&
+              item.data?.type === "cyberware"
+          )?.[0];
+          const numSlotsLeftLeg =
+            record?.data?.usedLeftCyberLegOptionSlots || 0;
+          const numSlotsRightLeg =
+            record?.data?.usedRightCyberLegOptionSlots || 0;
+          if (!leftLeg && !rightLeg) {
+            leftOrRight = "right";
+          } else if (!rightLeg) {
+            leftOrRight = "left";
+          } else if (!leftLeg) {
+            leftOrRight = "right";
+          } else if (numSlotsLeftLeg < numSlotsRightLeg) {
+            leftOrRight = "left";
+          } else {
+            leftOrRight = "right";
+          }
+          itemToAdd.data.cyberLocation = leftOrRight;
+          if (!itemToAdd.fields) itemToAdd.fields = {};
+          itemToAdd.fields.moveLeftBtn = {
+            hidden: leftOrRight === "left" ||
+              item.data?.foundationalSlot === "left foot" ||
+              item.data?.foundationalSlot === "right foot"
+                ? true
+                : false
+          };
+          itemToAdd.fields.moveRightBtn = {
+            hidden: leftOrRight === "right" ||
+              item.data?.foundationalSlot === "left foot" ||
+              item.data?.foundationalSlot === "right foot"
+                ? true
+                : false
+          };
+        }
+      }
+    }
+
+    // Add the item to the list then update the cyberware slot values
+    api.addValue(`data.inventory`, itemToAdd, (updatedRecord) => {
+      // Update all stats again
+      const valuesToSet = {};
+      const bestEquippedArmor = getBestEquippedArmor(updatedRecord);
+
+      valuesToSet["data.headArmor"] = bestEquippedArmor.head[0]?.name || "";
+      valuesToSet["data.headArmorSP"] = bestEquippedArmor.head[0]?.curSp || 0;
+      valuesToSet["data.headArmorPenalty"] =
+        bestEquippedArmor.head[0]?.penalty || 0;
+      valuesToSet["data.bodyArmor"] = bestEquippedArmor.body[0]?.name || "";
+      valuesToSet["data.bodyArmorSP"] = bestEquippedArmor.body[0]?.curSp || 0;
+      valuesToSet["data.bodyArmorPenalty"] =
+        bestEquippedArmor.body[0]?.penalty || 0;
+      valuesToSet["data.shield"] = bestEquippedArmor.shield[0]?.name || "";
+      valuesToSet["data.shieldHP"] = bestEquippedArmor.shield[0]?.curSp || 0;
+      valuesToSet["data.shieldPenalty"] =
+        bestEquippedArmor.shield[0]?.penalty || 0;
+
+      // Update attributes as per modifiers
+      updateAttributesOnRecord(updatedRecord, valuesToSet, bestEquippedArmor.highestPenalty);
+      if (Object.keys(valuesToSet).length > 0) {
+        api.setValuesOnRecord(updatedRecord, valuesToSet, (updatedRecord) => {
+          setCyberwareSlotValues(updatedRecord);
+          // Refresh the canvas node counts even if no slot value changed.
+          paintBody();
+        });
+      }
+    });
+  }
+
+  function onDrop(type, recordLink) {
+    if (type === "items") {
+      onDropItem(recordLink);
+    }
+  }
+
+  function getCyberwareFoundationalFiltersFor(type) {
+    // Only show cyberware that matches the foundational type
+    const filters = [
+      {
+        field: "foundationalSlot",
+        operator: "equals",
+        value: type,
+      },
+      {
+        field: "cyberwareInstallSlot",
+        operator: "equals",
+        value: "foundational",
+      },
+    ];
+
+    return filters;
+  }
+
+  function getCyberwareFiltersFor(type, location) {
+    // If the type is 'gear' we show all cyberware that has been set
+    // to 'withinGear'
+    if (type === "gear") {
+      return [
+        {
+          field: "withinGear",
+          operator: "equals",
+          value: true,
+        },
+      ];
+    }
+
+    // Only show cyberware that matches the foundational type
+    const filters = [
+      {
+        field: "cyberwareInstallSlot",
+        operator: "equals",
+        value: type,
+      },
+      {
+        field: "withinGear",
+        operator: "not_equals",
+        value: true,
+      },
+    ];
+
+    if (location) {
+      filters.push({
+        field: "cyberLocation",
+        operator: "equals",
+        value: location,
+      });
+    }
+
+    // If this is an arm or left, also show foundational left/right hands/feet
+    if (type === "cyberarms" || type === "cyberlegs") {
+      let secondaryType = "hand";
+      if (type === "cyberlegs") {
+        secondaryType = "foot";
+      }
+      filters.push({
+        field: "foundationalSlot",
+        operator: "equals",
+        value: `${location} ${secondaryType}`,
+        isOr: true,
+      });
+      filters.push({
+        field: "cyberLocation",
+        operator: "equals",
+        value: location,
+        isOr: false,
+      });
+      filters.push({
+        field: "carried",
+        operator: "equals",
+        value: "equipped",
+        isOr: false,
+      });
+      filters.push({
+        field: "type",
+        operator: "equals",
+        value: "cyberware",
+        isOr: false,
+      });
+    }
+
+    return filters;
+  }
+
+  /* =====================================================================
+     Canvas cyber-body navigator
+     The <canvas> is a visual navigator only. Clicking a body region (node)
+     reveals that region's focus panel of <list> components on the right.
+     All cyberware data / slot math / humanity rolls live in the existing
+     list templates and common.js -- this code only reads and paints.
+     ===================================================================== */
+
+  // Ordered node descriptors. id = selection key (data.cyberwareSelectedNode),
+  // panel = the <box> field revealed when the node is selected.
+  function cyberNodes() {
+    return [
+      { id: "neuralLink", label: "Neural Link", panel: "panelNeural", kind: "body" },
+      { id: "cyberaudio", label: "Cyberaudio", panel: "panelCyberaudio", kind: "body" },
+      { id: "rightEye", label: "R Eye", panel: "panelRightEye", kind: "body" },
+      { id: "leftEye", label: "L Eye", panel: "panelLeftEye", kind: "body" },
+      { id: "rightArm", label: "R Arm", panel: "panelRightArm", kind: "body" },
+      { id: "leftArm", label: "L Arm", panel: "panelLeftArm", kind: "body" },
+      { id: "torso", label: "Internal / External", panel: "panelTorso", kind: "body" },
+      { id: "rightLeg", label: "R Leg", panel: "panelRightLeg", kind: "body" },
+      { id: "leftLeg", label: "L Leg", panel: "panelLeftLeg", kind: "body" },
+      { id: "fashionware", label: "Fashionware", panel: "panelFashionware", kind: "footer" },
+      { id: "borgware", label: "Borgware", panel: "panelBorgware", kind: "footer" },
+      { id: "gear", label: "In Gear", panel: "panelGear", kind: "footer" },
+    ];
+  }
+
+  function canvasTheme() {
+    return {
+      bg: api.getThemeColor("background"),
+      surface: api.getThemeColor("surface"),
+      surfaceHover: api.getThemeColor("surfaceHover"),
+      border: api.getThemeColor("border"),
+      primary: api.getThemeColor("primary"),
+      primaryContrast: api.getThemeColor("primaryContrast"),
+      text: api.getThemeColor("text"),
+      textDim: api.getThemeColor("textDim"),
+      success: api.getThemeColor("success"),
+      warning: api.getThemeColor("warning"),
+      error: api.getThemeColor("error"),
+    };
+  }
+
+  // Rounded-rect path helper (arcTo based; caller does fill()/stroke()).
+  function rr(c, x, y, w, h, r) {
+    const rad = Math.max(0, Math.min(r, w / 2, h / 2));
+    c.beginPath();
+    c.moveTo(x + rad, y);
+    c.arcTo(x + w, y, x + w, y + h, rad);
+    c.arcTo(x + w, y + h, x, y + h, rad);
+    c.arcTo(x, y + h, x, y, rad);
+    c.arcTo(x, y, x + w, y, rad);
+    c.closePath();
+  }
+
+  // Compute node chip rects from the live canvas size so autosize works.
+  function bodyLayout() {
+    const c = api.getCanvas("cyberBodyCanvas");
+    if (!c) return null;
+    const W = c.width;
+    const H = c.height;
+    if (W < 40 || H < 40) return null;
+    const cx = W / 2;
+
+    const hud = { x: 6, y: 6, w: W - 12, h: 56 };
+    const footerH = 80;
+    const footerTop = H - footerH - 6;
+    const bodyTop = hud.y + hud.h + 10;
+    const bodyBot = footerTop - 8;
+    const bodyH = Math.max(140, bodyBot - bodyTop);
+
+    const mk = (id, ncx, ncy, w, h) => ({
+      id: id,
+      x: ncx - w / 2,
+      y: ncy - h / 2,
+      w: w,
+      h: h,
+    });
+
+    const headChipW = Math.max(72, W * 0.32);
+    const armW = Math.max(64, W * 0.27);
+    const legW = Math.max(60, W * 0.26);
+    const torsoW = Math.max(126, W * 0.46);
+    const headDX = W * 0.22;
+    const armDX = W * 0.27;
+    const legDX = W * 0.16;
+
+    const nodes = [
+      // Head cluster: two columns flanking the head -- Neural Link over
+      // R Eye on the left, Cyberaudio over L Eye on the right.
+      mk("neuralLink", cx - headDX, bodyTop + bodyH * 0.05, headChipW, 34),
+      mk("cyberaudio", cx + headDX, bodyTop + bodyH * 0.05, headChipW, 34),
+      mk("rightEye", cx - headDX, bodyTop + bodyH * 0.16, headChipW, 34),
+      mk("leftEye", cx + headDX, bodyTop + bodyH * 0.16, headChipW, 34),
+      mk("rightArm", cx - armDX, bodyTop + bodyH * 0.4, armW, 34),
+      mk("leftArm", cx + armDX, bodyTop + bodyH * 0.4, armW, 34),
+      mk("torso", cx, bodyTop + bodyH * 0.55, torsoW, 44),
+      mk("rightLeg", cx - legDX, bodyTop + bodyH * 0.85, legW, 34),
+      mk("leftLeg", cx + legDX, bodyTop + bodyH * 0.85, legW, 34),
+    ];
+
+    // Footer strip: 3 equal chips for the non-anatomical sections.
+    const fGap = 6;
+    const fPad = 6;
+    const fW = (W - fPad * 2 - fGap * 2) / 3;
+    const fH = footerH - 12;
+    const fY = footerTop + 6;
+    ["fashionware", "borgware", "gear"].forEach((id, i) => {
+      nodes.push({
+        id: id,
+        x: fPad + i * (fW + fGap),
+        y: fY,
+        w: fW,
+        h: fH,
+      });
+    });
+
+    return {
+      c: c,
+      W: W,
+      H: H,
+      cx: cx,
+      hud: hud,
+      bodyTop: bodyTop,
+      bodyBot: bodyBot,
+      bodyH: bodyH,
+      footerTop: footerTop,
+      nodes: nodes,
+    };
+  }
+
+  // Classify an inventory item to a navigator node id (or null).
+  function nodeForItem(item) {
+    const d = item && item.data;
+    if (!d || d.type !== "cyberware" || d.carried !== "equipped") return null;
+    if (d.withinGear === true) return "gear";
+    const slot = d.cyberwareInstallSlot;
+    const fnd = (d.foundationalSlot || "").toLowerCase();
+    if (slot === "foundational") {
+      if (fnd === "neural link") return "neuralLink";
+      if (fnd === "cyberaudio suite") return "cyberaudio";
+      if (fnd === "left cybereye") return "leftEye";
+      if (fnd === "right cybereye") return "rightEye";
+      if (fnd === "left cyberarm" || fnd === "left hand") return "leftArm";
+      if (fnd === "right cyberarm" || fnd === "right hand") return "rightArm";
+      if (fnd === "left cyberleg" || fnd === "left foot") return "leftLeg";
+      if (fnd === "right cyberleg" || fnd === "right foot") return "rightLeg";
+      return null;
+    }
+    // Neuralware and Chipware are both managed under the Neural Link panel.
+    if (slot === "neuralware" || slot === "chipware") return "neuralLink";
+    if (slot === "cyberaudio") return "cyberaudio";
+    if (slot === "cyberoptics")
+      return d.cyberLocation === "left" ? "leftEye" : "rightEye";
+    if (slot === "cyberarms" || slot === "cyberfingers")
+      return d.cyberLocation === "left" ? "leftArm" : "rightArm";
+    if (slot === "cyberlegs")
+      return d.cyberLocation === "left" ? "leftLeg" : "rightLeg";
+    if (
+      slot === "internal body cyberware" ||
+      slot === "external body cyberware"
+    )
+      return "torso";
+    if (slot === "fashionware") return "fashionware";
+    if (slot === "borgware") return "borgware";
+    return null;
+  }
+
+  // Per-node { used, max, count, slots }. used/max read the precomputed
+  // data.*OptionSlots fields (kept current by common.js setCyberwareSlotValues)
+  // so chip numbers always match the focus-panel counters.
+  function computeAllNodeAggregates(data) {
+    const g = (k) => Number(data[k]) || 0;
+    const agg = {
+      neuralLink: {
+        used: g("usedNeuralLinkOptionSlots"),
+        max: g("neuralLinkOptionSlots"),
+        count: 0,
+        slots: true,
+      },
+      cyberaudio: {
+        used: g("usedCyberaudioSuiteOptionSlots"),
+        max: g("cyberaudioSuiteOptionSlots"),
+        count: 0,
+        slots: true,
+      },
+      rightEye: {
+        used: g("usedRightCyberEyeOptionSlots"),
+        max: g("rightCyberEyeOptionSlots"),
+        count: 0,
+        slots: true,
+      },
+      leftEye: {
+        used: g("usedLeftCyberEyeOptionSlots"),
+        max: g("leftCyberEyeOptionSlots"),
+        count: 0,
+        slots: true,
+      },
+      leftArm: {
+        used: g("usedLeftCyberArmOptionSlots"),
+        max: g("leftCyberArmOptionSlots"),
+        count: 0,
+        slots: true,
+      },
+      rightArm: {
+        used: g("usedRightCyberArmOptionSlots"),
+        max: g("rightCyberArmOptionSlots"),
+        count: 0,
+        slots: true,
+      },
+      leftLeg: {
+        used: g("usedLeftCyberLegOptionSlots"),
+        max: g("leftCyberLegOptionSlots"),
+        count: 0,
+        slots: true,
+      },
+      rightLeg: {
+        used: g("usedRightCyberLegOptionSlots"),
+        max: g("rightCyberLegOptionSlots"),
+        count: 0,
+        slots: true,
+      },
+      torso: {
+        used:
+          g("usedInternalCyberwareOptionSlots") +
+          g("usedExternalCyberwareOptionSlots"),
+        max:
+          g("internalCyberwareOptionSlots") +
+          g("externalCyberwareOptionSlots"),
+        count: 0,
+        slots: true,
+      },
+      fashionware: {
+        used: g("usedFashionwareOptionSlots"),
+        max: g("fashionwareOptionSlots"),
+        count: 0,
+        slots: true,
+      },
+      borgware: { used: 0, max: 0, count: 0, slots: false },
+      gear: { used: 0, max: 0, count: 0, slots: false },
+    };
+
+    // Mark which nodes can host a foundational (base) implant, e.g. the
+    // Cyberarm itself. Torso / Fashionware / Borgware / Gear have none.
+    [
+      "neuralLink",
+      "cyberaudio",
+      "rightEye",
+      "leftEye",
+      "leftArm",
+      "rightArm",
+      "leftLeg",
+      "rightLeg",
+    ].forEach((id) => {
+      if (agg[id]) {
+        agg[id].foundationCapable = true;
+        agg[id].foundation = false;
+      }
+    });
+
+    const inv = Array.isArray(data.inventory) ? data.inventory : [];
+    inv.forEach((it) => {
+      const n = nodeForItem(it);
+      if (!n || !agg[n]) return;
+      agg[n].count++;
+      if (it.data && it.data.cyberwareInstallSlot === "foundational") {
+        agg[n].foundation = true;
+      }
+    });
+    return agg;
+  }
+
+  function nodeTooltipText(desc, agg) {
+    const a = agg || {};
+    const cnt = (a.count || 0) + " item" + (a.count === 1 ? "" : "s");
+    let text = a.slots
+      ? desc.label +
+        " - " +
+        (a.used || 0) +
+        "/" +
+        (a.max || 0) +
+        " slots, " +
+        cnt
+      : desc.label + " - " + cnt;
+    if (a.foundationCapable) {
+      text += a.foundation
+        ? " (foundational installed)"
+        : " (no foundational)";
+    }
+    return text;
+  }
+
+  // Draw the provided cyber-body SVG centered in the body area, preserving
+  // aspect ratio. The figure's fills are re-themed (#888 -> primary, the two
+  // near-white fills -> surface) so the body picks up the active theme.
+  // Async: drawSVG yields on a cold cache, paints synchronously once warmed.
+  async function drawBodyImage(c, lay, theme) {
+    if (typeof c.drawSVG !== "function") return;
+
+    const svg = BODY_SVG.split("#888")
+      .join(theme.primary)
+      .split("#FCFCFC")
+      .join(theme.surface)
+      .split("#FDFDFD")
+      .join(theme.surface);
+
+    // Nudge the figure down a touch; keep it fitted within the body area.
+    const offsetY = 15;
+    const availH = lay.bodyH - offsetY;
+    const svgAspect = 1024 / 1536;
+    let sw = lay.W;
+    let sh = sw / svgAspect;
+    if (sh > availH) {
+      sh = availH;
+      sw = sh * svgAspect;
+    }
+    const sx = (lay.W - sw) / 2;
+    const sy = lay.bodyTop + offsetY + (availH - sh) / 2;
+    await c.drawSVG(svg, sx, sy, sw, sh);
+  }
+
+  function drawHud(c, lay, theme, data) {
+    const h = lay.hud;
+
+    rr(c, h.x, h.y, h.w, h.h, 6);
+    c.setFillStyle(theme.surface);
+    c.fill();
+    rr(c, h.x, h.y, h.w, h.h, 6);
+    c.setStrokeStyle(theme.border);
+    c.setLineWidth(1);
+    c.stroke();
+
+    const cur = Number(data.curHumanity) || 0;
+    let max = Number(data.totalHumanity) || 0;
+    if (!max) max = Number(data.humanity) || 0;
+    const emp = Number(data.curEmp) || 0;
+    const ratio = max > 0 ? Math.max(0, Math.min(1, cur / max)) : 0;
+
+    c.setFillStyle(theme.textDim);
+    c.setFont("bold 10px sans-serif");
+    c.setTextBaseline("alphabetic");
+    c.setTextAlign("left");
+    c.fillText("HUMANITY", h.x + 10, h.y + 16);
+    c.setTextAlign("right");
+    c.fillText("EMP " + emp, h.x + h.w - 10, h.y + 16);
+
+    const barX = h.x + 10;
+    const barY = h.y + 24;
+    const barW = h.w - 20;
+    const barH = 13;
+    rr(c, barX, barY, barW, barH, 4);
+    c.setFillStyle(theme.border);
+    c.fill();
+
+    let barColor = theme.success;
+    if (ratio < 0.2) barColor = theme.error;
+    else if (ratio < 0.5) barColor = theme.warning;
+    if (ratio > 0) {
+      rr(c, barX, barY, Math.max(4, barW * ratio), barH, 4);
+      c.setFillStyle(barColor);
+      c.fill();
+    }
+
+    c.setFillStyle(theme.text);
+    c.setFont("bold 11px sans-serif");
+    c.setTextAlign("center");
+    c.setTextBaseline("middle");
+    c.fillText(cur + " / " + max, h.x + h.w / 2, barY + barH / 2 + 1);
+  }
+
+  function drawNode(c, node, desc, agg, selected, hovered, theme) {
+    const x = node.x;
+    const y = node.y;
+    const w = node.w;
+    const h = node.h;
+
+    rr(c, x, y, w, h, 6);
+    c.setFillStyle(
+      selected
+        ? theme.primary
+        : hovered
+        ? theme.surfaceHover
+        : theme.surface
+    );
+    c.fill();
+    rr(c, x, y, w, h, 6);
+    c.setStrokeStyle(selected ? theme.primary : theme.border);
+    c.setLineWidth(selected ? 2 : 1);
+    c.stroke();
+
+    const hasSlots = agg && agg.slots;
+    const fg = selected
+      ? theme.primaryContrast
+      : desc.id === "gear"
+      ? theme.textDim
+      : theme.text;
+    const dim = selected ? theme.primaryContrast : theme.textDim;
+
+    c.setFillStyle(fg);
+    c.setFont("bold 11px sans-serif");
+    c.setTextAlign("center");
+    c.setTextBaseline("alphabetic");
+    c.fillText(desc.label, x + w / 2, hasSlots ? y + h / 2 - 1 : y + h / 2 + 4);
+
+    if (hasSlots) {
+      const used = agg.used || 0;
+      const max = agg.max || 0;
+      let col = dim;
+      if (!selected) {
+        if (used > max) col = theme.error;
+        else if (max > 0 && used === max) col = theme.warning;
+      }
+      c.setFillStyle(col);
+      c.setFont("10px sans-serif");
+      c.fillText(used + " / " + max + " slots", x + w / 2, y + h / 2 + 12);
+    }
+
+    // Equipped-count badge, top-right corner.
+    const count = agg ? agg.count || 0 : 0;
+    const bx = x + w - 9;
+    const by = y + 9;
+    c.beginPath();
+    c.arc(bx, by, 8, 0, Math.PI * 2);
+    c.setFillStyle(
+      count > 0
+        ? selected
+          ? theme.primaryContrast
+          : theme.primary
+        : theme.border
+    );
+    c.fill();
+    c.setFillStyle(
+      count > 0
+        ? selected
+          ? theme.primary
+          : theme.primaryContrast
+        : theme.textDim
+    );
+    c.setFont("bold 9px sans-serif");
+    c.setTextAlign("center");
+    c.setTextBaseline("middle");
+    c.fillText(String(count), bx, by + 1);
+
+    // Foundational (base implant) indicator, top-left corner: a filled dot
+    // when the base implant is installed, a hollow ring when it is missing.
+    if (agg && agg.foundationCapable) {
+      const fx = x + 9;
+      const fy = y + 9;
+      c.beginPath();
+      c.arc(fx, fy, 5.5, 0, Math.PI * 2);
+      if (agg.foundation) {
+        c.setFillStyle(selected ? theme.primaryContrast : theme.success);
+        c.fill();
+      } else {
+        c.setStrokeStyle(selected ? theme.primaryContrast : theme.textDim);
+        c.setLineWidth(1.5);
+        c.stroke();
+      }
+    }
+  }
+
+  // Single repaint entry point. Async because the body SVG draw yields on a
+  // cold image cache; concurrent calls simply end with the latest paint.
+  async function paintBody() {
+    const c = api.getCanvas("cyberBodyCanvas");
+    if (!c) return;
+    const lay = bodyLayout();
+    if (!lay) return;
+    const theme = canvasTheme();
+    const data = api.getValue("data") || (record && record.data) || {};
+    const selectedId = data.cyberwareSelectedNode || "neuralLink";
+    const hoverId = api.getSession("cyberwareHover") || null;
+    const agg = computeAllNodeAggregates(data);
+
+    const descById = {};
+    cyberNodes().forEach((n) => {
+      descById[n.id] = n;
+    });
+
+    c.clearRect(0, 0, lay.W, lay.H);
+    c.clearTooltips();
+    c.setFillStyle(theme.bg);
+    c.fillRect(0, 0, lay.W, lay.H);
+
+    await drawBodyImage(c, lay, theme);
+    drawHud(c, lay, theme, data);
+
+    // Divider line above the footer strip.
+    c.setStrokeStyle(theme.border);
+    c.setLineWidth(1);
+    c.beginPath();
+    c.moveTo(8, lay.footerTop);
+    c.lineTo(lay.W - 8, lay.footerTop);
+    c.stroke();
+
+    lay.nodes.forEach((node) => {
+      const desc = descById[node.id];
+      if (!desc) return;
+      drawNode(
+        c,
+        node,
+        desc,
+        agg[node.id],
+        node.id === selectedId,
+        node.id === hoverId,
+        theme
+      );
+      c.tooltip(
+        node.x,
+        node.y,
+        node.w,
+        node.h,
+        nodeTooltipText(desc, agg[node.id])
+      );
+    });
+  }
+
+  function nodeHitTest(x, y, lay) {
+    for (let i = 0; i < lay.nodes.length; i++) {
+      const n = lay.nodes[i];
+      if (x >= n.x && x <= n.x + n.w && y >= n.y && y <= n.y + n.h) return n;
+    }
+    return null;
+  }
+
+  function onCanvasClick() {
+    const lay = bodyLayout();
+    if (!lay) return;
+    const hit = nodeHitTest(event.x, event.y, lay);
+    if (!hit) return;
+    if (api.getValue("data.cyberwareSelectedNode") === hit.id) return;
+
+    // One patch: record the selection + flip every focus panel's visibility.
+    const valuesToSet = { "data.cyberwareSelectedNode": hit.id };
+    cyberNodes().forEach((n) => {
+      valuesToSet["fields." + n.panel + ".hidden"] = n.id !== hit.id;
+    });
+    api.setValues(valuesToSet, () => {
+      paintBody();
+    });
+  }
+
+  function onCanvasMove() {
+    const lay = bodyLayout();
+    if (!lay) return;
+    const hit = nodeHitTest(event.x, event.y, lay);
+    const id = hit ? hit.id : null;
+    const prev = api.getSession("cyberwareHover") || null;
+    if (prev !== id) {
+      api.setSession("cyberwareHover", id);
+      paintBody();
+    }
+  }
+
+  function onCanvasLeave() {
+    if (api.getSession("cyberwareHover")) {
+      api.setSession("cyberwareHover", null);
+      paintBody();
+    }
+  }
+
+  function onCanvasRecordChange() {
+    // Equip / remove / move cyberware -> refresh node counts and the HUD.
+    paintBody();
+  }
+</script>
+
+<!-- Cyberpunk RED cyberware tab. A canvas cyber-body navigator on the left
+     selects a body region; the matching focus panel of datapad sections is
+     revealed on the right. Every list type, filter, counter and field
+     binding is preserved verbatim from the original tab. -->
+<div
+  class="sheet--datapad sheet--datapad--cpr"
+  style="
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: flex-start;
+    margin-top: 4px;
+    width: 100%;
+  "
+>
+  <!-- LEFT: canvas body navigator -->
+  <div style="flex: 0 0 320px; min-width: 300px">
+    <div
+      style="
+        width: 100%;
+        height: 560px;
+        border: 1px solid rgba(120, 160, 200, 0.25);
+        border-radius: 6px;
+      "
+    >
+      <canvas
+        field="cyberBodyCanvas"
+        autosize="true"
+        style="
+          width: 100%;
+          height: 100%;
+          display: block;
+          cursor: pointer;
+          border-radius: 6px;
+        "
+        onload="onLoad()"
+        onresize="paintBody()"
+        onclick="onCanvasClick()"
+        onmousemove="onCanvasMove()"
+        onmouseleave="onCanvasLeave()"
+        onrecordchange="onCanvasRecordChange()"
+      ></canvas>
+    </div>
+  </div>
+
+  <!-- RIGHT: focus panels (exactly one visible at a time). flex-basis +
+       min-width set how narrow the window can get before this column wraps
+       below the canvas (~550px: 320 canvas + 10 gap + 220). -->
+  <div
+    style="
+      flex: 1 1 220px;
+      min-width: 220px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    "
+  >
+    <!-- NEURAL LINK (neuralware + chipware) -->
+    <box field="panelNeural">
+      <!-- Neural Link -->
+      <div class="rvtt-datapad-section">
+        <div class="rvtt-datapad-divider">
+          <span class="rvtt-datapad-divider__label">Neural Link</span>
+        </div>
+        <list
+          field="inventory"
+          listtype="cyberware_foundational_list"
+          emptylisttext="No Neural Link Equipped"
+          getfilters="return getCyberwareFoundationalFiltersFor('neural link');"
+        ></list>
+
+        <div style="margin-top: 2px">
+          <divider
+            field="neuralLinkDivider"
+            label="Option Slots"
+            color="primary"
+          ></divider>
+        </div>
+
+        <div
+          style="
+            display: flex;
+            flex-direction: row;
+            gap: 12px;
+            align-items: flex-end;
+            width: fit-content;
+          "
+        >
+          <div style="display: flex; flex-direction: row; gap: 4px; align-items: center">
+            <label size="xs" variant="bold" textalign="left" label="Used Slots"></label>
+            <counter
+              field="usedNeuralLinkOptionSlots"
+              size="xs"
+              maxvaluefield="neuralLinkOptionSlots"
+            ></counter>
+          </div>
+          <numberfield
+            field="neuralLinkOptionSlots"
+            minvalue="1"
+            hideonlocked="true"
+            label="Max Slots"
+            width="100px"
+            size="xs"
+          ></numberfield>
+        </div>
+
+        <div style="margin-top: 4px">
+          <list
+            field="inventory"
+            listtype="cyberware_list"
+            variant="striped"
+            getfilters="return getCyberwareFiltersFor('neuralware');"
+            emptylisttext="No Neuralware Equipped"
+          ></list>
+        </div>
+
+        <div style="margin-top: 2px">
+          <divider
+            field="chipwareDivider"
+            label="Chipware"
+            color="secondary"
+          ></divider>
+        </div>
+        <div style="margin-top: 4px">
+          <list
+            field="inventory"
+            listtype="cyberware_list"
+            variant="striped"
+            getfilters="return getCyberwareFiltersFor('chipware');"
+            emptylisttext="No Chipware Equipped"
+          ></list>
+        </div>
+      </div>
+    </box>
+
+    <!-- CYBERAUDIO SUITE -->
+    <box field="panelCyberaudio" hidden="true">
+      <!-- Cyberaudio Suite -->
+      <div class="rvtt-datapad-section">
+        <div class="rvtt-datapad-divider">
+          <span class="rvtt-datapad-divider__label">Cyberaudio Suite</span>
+        </div>
+        <list
+          field="inventory"
+          listtype="cyberware_foundational_list"
+          emptylisttext="No Cyberaudio Suite Equipped"
+          getfilters="return getCyberwareFoundationalFiltersFor('cyberaudio suite');"
+        ></list>
+
+        <div style="margin-top: 2px">
+          <divider
+            field="cyberaudioSuiteDivider"
+            label="Option Slots"
+            color="primary"
+          ></divider>
+        </div>
+
+        <div
+          style="
+            display: flex;
+            flex-direction: row;
+            gap: 12px;
+            align-items: flex-end;
+            width: fit-content;
+          "
+        >
+          <div style="display: flex; flex-direction: row; gap: 4px; align-items: center">
+            <label size="xs" variant="bold" textalign="left" label="Used Slots"></label>
+            <counter
+              field="usedCyberaudioSuiteOptionSlots"
+              size="xs"
+              maxvaluefield="cyberaudioSuiteOptionSlots"
+            ></counter>
+          </div>
+          <numberfield
+            field="cyberaudioSuiteOptionSlots"
+            minvalue="1"
+            hideonlocked="true"
+            label="Max Slots"
+            width="100px"
+            size="xs"
+          ></numberfield>
+        </div>
+
+        <div style="margin-top: 4px">
+          <list
+            field="inventory"
+            listtype="cyberware_list"
+            variant="striped"
+            getfilters="return getCyberwareFiltersFor('cyberaudio');"
+            emptylisttext="No Cyberaudio Equipped"
+          ></list>
+        </div>
+      </div>
+    </box>
+
+    <!-- RIGHT CYBEREYE -->
+    <box field="panelRightEye" hidden="true">
+      <!-- Right Cybereye -->
+      <div class="rvtt-datapad-section">
+        <div class="rvtt-datapad-divider">
+          <span class="rvtt-datapad-divider__label">Right Cybereye</span>
+        </div>
+        <list
+          field="inventory"
+          listtype="cyberware_foundational_list"
+          emptylisttext="No Right Cybereye Equipped"
+          getfilters="return getCyberwareFoundationalFiltersFor('right cybereye');"
+        ></list>
+
+        <div style="margin-top: 2px">
+          <divider
+            field="rightCybereyeDivider"
+            label="Option Slots"
+            color="primary"
+          ></divider>
+        </div>
+
+        <div
+          style="
+            display: flex;
+            flex-direction: row;
+            gap: 12px;
+            align-items: flex-end;
+            width: fit-content;
+          "
+        >
+          <div style="display: flex; flex-direction: row; gap: 4px; align-items: center">
+            <label size="xs" variant="bold" textalign="left" label="Used Slots"></label>
+            <counter
+              field="usedRightCyberEyeOptionSlots"
+              size="xs"
+              maxvaluefield="rightCyberEyeOptionSlots"
+            ></counter>
+          </div>
+          <numberfield
+            field="rightCyberEyeOptionSlots"
+            minvalue="1"
+            hideonlocked="true"
+            label="Max Slots"
+            width="100px"
+            size="xs"
+          ></numberfield>
+        </div>
+
+        <div style="margin-top: 4px">
+          <list
+            field="inventory"
+            listtype="cyberware_list"
+            variant="striped"
+            getfilters="return getCyberwareFiltersFor('cyberoptics', 'right');"
+            emptylisttext="No Cyberoptics Equipped in Right Eye"
+          ></list>
+        </div>
+      </div>
+    </box>
+
+    <!-- LEFT CYBEREYE -->
+    <box field="panelLeftEye" hidden="true">
+      <!-- Left Cybereye -->
+      <div class="rvtt-datapad-section">
+        <div class="rvtt-datapad-divider">
+          <span class="rvtt-datapad-divider__label">Left Cybereye</span>
+        </div>
+        <list
+          field="inventory"
+          listtype="cyberware_foundational_list"
+          emptylisttext="No Left Cybereye Equipped"
+          getfilters="return getCyberwareFoundationalFiltersFor('left cybereye');"
+        ></list>
+
+        <div style="margin-top: 2px">
+          <divider
+            field="leftCybereyeDivider"
+            label="Option Slots"
+            color="primary"
+          ></divider>
+        </div>
+
+        <div
+          style="
+            display: flex;
+            flex-direction: row;
+            gap: 12px;
+            align-items: flex-end;
+            width: fit-content;
+          "
+        >
+          <div style="display: flex; flex-direction: row; gap: 4px; align-items: center">
+            <label size="xs" variant="bold" textalign="left" label="Used Slots"></label>
+            <counter
+              field="usedLeftCyberEyeOptionSlots"
+              size="xs"
+              maxvaluefield="leftCyberEyeOptionSlots"
+            ></counter>
+          </div>
+          <numberfield
+            field="leftCyberEyeOptionSlots"
+            minvalue="1"
+            hideonlocked="true"
+            label="Max Slots"
+            width="100px"
+            size="xs"
+          ></numberfield>
+        </div>
+
+        <div style="margin-top: 4px">
+          <list
+            field="inventory"
+            listtype="cyberware_list"
+            variant="striped"
+            getfilters="return getCyberwareFiltersFor('cyberoptics', 'left');"
+            emptylisttext="No Cyberoptics Equipped in Left Eye"
+          ></list>
+        </div>
+      </div>
+    </box>
+
+    <!-- LEFT ARM -->
+    <box field="panelLeftArm" hidden="true">
+      <!-- Left Cyberarm -->
+      <div class="rvtt-datapad-section">
+        <div class="rvtt-datapad-divider">
+          <span class="rvtt-datapad-divider__label">Left Cyberarm</span>
+        </div>
+        <list
+          field="inventory"
+          listtype="cyberware_foundational_list"
+          emptylisttext="No Left Cyberarm Equipped"
+          getfilters="return getCyberwareFoundationalFiltersFor('left cyberarm');"
+        ></list>
+
+        <div style="margin-top: 2px">
+          <divider
+            field="leftCyberarmDivider"
+            label="Option Slots"
+            color="primary"
+          ></divider>
+        </div>
+
+        <div
+          style="
+            display: flex;
+            flex-direction: row;
+            gap: 12px;
+            align-items: flex-end;
+            width: fit-content;
+          "
+        >
+          <div style="display: flex; flex-direction: row; gap: 4px; align-items: center">
+            <label size="xs" variant="bold" textalign="left" label="Used Slots"></label>
+            <counter
+              field="usedLeftCyberArmOptionSlots"
+              size="xs"
+              maxvaluefield="leftCyberArmOptionSlots"
+            ></counter>
+          </div>
+          <numberfield
+            field="leftCyberArmOptionSlots"
+            minvalue="1"
+            hideonlocked="true"
+            label="Max Slots"
+            width="100px"
+            size="xs"
+          ></numberfield>
+        </div>
+
+        <div style="margin-top: 4px">
+          <list
+            field="inventory"
+            listtype="cyberware_list"
+            variant="striped"
+            getfilters="return getCyberwareFiltersFor('cyberarms', 'left');"
+            emptylisttext="No Cyberware Equipped in Left Arm"
+          ></list>
+        </div>
+
+        <div style="margin-top: 2px">
+          <divider
+            field="leftCyberFingerDivider"
+            label="Left Hand Cyberfingers"
+            color="secondary"
+          ></divider>
+        </div>
+        <div style="margin-top: 4px">
+          <list
+            field="inventory"
+            listtype="cyberware_list"
+            variant="striped"
+            getfilters="return getCyberwareFiltersFor('cyberfingers', 'left');"
+            emptylisttext="No Cyberfingers Equipped in Left Hand"
+          ></list>
+        </div>
+      </div>
+    </box>
+
+    <!-- RIGHT ARM -->
+    <box field="panelRightArm" hidden="true">
+      <!-- Right Cyberarm -->
+      <div class="rvtt-datapad-section">
+        <div class="rvtt-datapad-divider">
+          <span class="rvtt-datapad-divider__label">Right Cyberarm</span>
+        </div>
+        <list
+          field="inventory"
+          listtype="cyberware_foundational_list"
+          emptylisttext="No Right Cyberarm Equipped"
+          getfilters="return getCyberwareFoundationalFiltersFor('right cyberarm');"
+        ></list>
+
+        <div style="margin-top: 2px">
+          <divider
+            field="rightCyberarmDivider"
+            label="Option Slots"
+            color="primary"
+          ></divider>
+        </div>
+
+        <div
+          style="
+            display: flex;
+            flex-direction: row;
+            gap: 12px;
+            align-items: flex-end;
+            width: fit-content;
+          "
+        >
+          <div style="display: flex; flex-direction: row; gap: 4px; align-items: center">
+            <label size="xs" variant="bold" textalign="left" label="Used Slots"></label>
+            <counter
+              field="usedRightCyberArmOptionSlots"
+              size="xs"
+              maxvaluefield="rightCyberArmOptionSlots"
+            ></counter>
+          </div>
+          <numberfield
+            field="rightCyberArmOptionSlots"
+            minvalue="1"
+            hideonlocked="true"
+            label="Max Slots"
+            width="100px"
+            size="xs"
+          ></numberfield>
+        </div>
+
+        <div style="margin-top: 4px">
+          <list
+            field="inventory"
+            listtype="cyberware_list"
+            variant="striped"
+            getfilters="return getCyberwareFiltersFor('cyberarms', 'right');"
+            emptylisttext="No Cyberware Equipped in Right Arm"
+          ></list>
+        </div>
+
+        <div style="margin-top: 2px">
+          <divider
+            field="rightCyberFingerDivider"
+            label="Right Hand Cyberfingers"
+            color="secondary"
+          ></divider>
+        </div>
+        <div style="margin-top: 4px">
+          <list
+            field="inventory"
+            listtype="cyberware_list"
+            variant="striped"
+            getfilters="return getCyberwareFiltersFor('cyberfingers', 'right');"
+            emptylisttext="No Cyberfingers Equipped in Right Hand"
+          ></list>
+        </div>
+      </div>
+    </box>
+
+    <!-- TORSO: Internal + External Cyberware -->
+    <box field="panelTorso" hidden="true">
+      <!-- Internal Cyberware -->
+      <div class="rvtt-datapad-section">
+        <div class="rvtt-datapad-divider">
+          <span class="rvtt-datapad-divider__label">Internal Cyberware</span>
+        </div>
+        <div
+          style="
+            display: flex;
+            flex-direction: row;
+            gap: 12px;
+            align-items: flex-end;
+            width: fit-content;
+          "
+        >
+          <div style="display: flex; flex-direction: row; gap: 4px; align-items: center">
+            <label size="xs" variant="bold" textalign="left" label="Used Slots"></label>
+            <counter
+              field="usedInternalCyberwareOptionSlots"
+              size="xs"
+              maxvaluefield="internalCyberwareOptionSlots"
+            ></counter>
+          </div>
+          <numberfield
+            field="internalCyberwareOptionSlots"
+            minvalue="1"
+            hideonlocked="true"
+            label="Max Slots"
+            width="100px"
+            size="xs"
+          ></numberfield>
+        </div>
+
+        <div style="margin-top: 4px">
+          <list
+            field="inventory"
+            listtype="cyberware_list"
+            variant="striped"
+            getfilters="return getCyberwareFiltersFor('internal body cyberware');"
+            emptylisttext="No Cyberware Equipped in Internal Body"
+          ></list>
+        </div>
+      </div>
+
+      <!-- External Cyberware -->
+      <div class="rvtt-datapad-section">
+        <div class="rvtt-datapad-divider">
+          <span class="rvtt-datapad-divider__label">External Cyberware</span>
+        </div>
+        <div
+          style="
+            display: flex;
+            flex-direction: row;
+            gap: 12px;
+            align-items: flex-end;
+            width: fit-content;
+          "
+        >
+          <div style="display: flex; flex-direction: row; gap: 4px; align-items: center">
+            <label size="xs" variant="bold" textalign="left" label="Used Slots"></label>
+            <counter
+              field="usedExternalCyberwareOptionSlots"
+              size="xs"
+              maxvaluefield="externalCyberwareOptionSlots"
+            ></counter>
+          </div>
+          <numberfield
+            field="externalCyberwareOptionSlots"
+            minvalue="1"
+            hideonlocked="true"
+            label="Max Slots"
+            width="100px"
+            size="xs"
+          ></numberfield>
+        </div>
+
+        <div style="margin-top: 4px">
+          <list
+            field="inventory"
+            listtype="cyberware_list"
+            variant="striped"
+            getfilters="return getCyberwareFiltersFor('external body cyberware');"
+            emptylisttext="No Cyberware Equipped in External Body"
+          ></list>
+        </div>
+      </div>
+    </box>
+
+    <!-- LEFT LEG -->
+    <box field="panelLeftLeg" hidden="true">
+      <!-- Left Cyberleg -->
+      <div class="rvtt-datapad-section">
+        <div class="rvtt-datapad-divider">
+          <span class="rvtt-datapad-divider__label">Left Cyberleg</span>
+        </div>
+        <list
+          field="inventory"
+          listtype="cyberware_foundational_list"
+          emptylisttext="No Left Cyberleg Equipped"
+          getfilters="return getCyberwareFoundationalFiltersFor('left cyberleg');"
+        ></list>
+
+        <div style="margin-top: 2px">
+          <divider
+            field="leftCyberlegDivider"
+            label="Option Slots"
+            color="primary"
+          ></divider>
+        </div>
+
+        <div
+          style="
+            display: flex;
+            flex-direction: row;
+            gap: 12px;
+            align-items: flex-end;
+            width: fit-content;
+          "
+        >
+          <div style="display: flex; flex-direction: row; gap: 4px; align-items: center">
+            <label size="xs" variant="bold" textalign="left" label="Used Slots"></label>
+            <counter
+              field="usedLeftCyberLegOptionSlots"
+              size="xs"
+              maxvaluefield="leftCyberLegOptionSlots"
+            ></counter>
+          </div>
+          <numberfield
+            field="leftCyberLegOptionSlots"
+            minvalue="1"
+            hideonlocked="true"
+            label="Max Slots"
+            width="100px"
+            size="xs"
+          ></numberfield>
+        </div>
+
+        <div style="margin-top: 4px">
+          <list
+            field="inventory"
+            listtype="cyberware_list"
+            variant="striped"
+            getfilters="return getCyberwareFiltersFor('cyberlegs', 'left');"
+            emptylisttext="No Cyberware Equipped in Left Leg"
+          ></list>
+        </div>
+      </div>
+    </box>
+
+    <!-- RIGHT LEG -->
+    <box field="panelRightLeg" hidden="true">
+      <!-- Right Cyberleg -->
+      <div class="rvtt-datapad-section">
+        <div class="rvtt-datapad-divider">
+          <span class="rvtt-datapad-divider__label">Right Cyberleg</span>
+        </div>
+        <list
+          field="inventory"
+          listtype="cyberware_foundational_list"
+          emptylisttext="No Right Cyberleg Equipped"
+          getfilters="return getCyberwareFoundationalFiltersFor('right cyberleg');"
+        ></list>
+
+        <div style="margin-top: 2px">
+          <divider
+            field="rightCyberlegDivider"
+            label="Option Slots"
+            color="primary"
+          ></divider>
+        </div>
+
+        <div
+          style="
+            display: flex;
+            flex-direction: row;
+            gap: 12px;
+            align-items: flex-end;
+            width: fit-content;
+          "
+        >
+          <div style="display: flex; flex-direction: row; gap: 4px; align-items: center">
+            <label size="xs" variant="bold" textalign="left" label="Used Slots"></label>
+            <counter
+              field="usedRightCyberLegOptionSlots"
+              size="xs"
+              maxvaluefield="rightCyberLegOptionSlots"
+            ></counter>
+          </div>
+          <numberfield
+            field="rightCyberLegOptionSlots"
+            minvalue="1"
+            hideonlocked="true"
+            label="Max Slots"
+            width="100px"
+            size="xs"
+          ></numberfield>
+        </div>
+
+        <div style="margin-top: 4px">
+          <list
+            field="inventory"
+            listtype="cyberware_list"
+            variant="striped"
+            getfilters="return getCyberwareFiltersFor('cyberlegs', 'right');"
+            emptylisttext="No Cyberware Equipped in Right Leg"
+          ></list>
+        </div>
+      </div>
+    </box>
+
+    <!-- FASHIONWARE -->
+    <box field="panelFashionware" hidden="true">
+      <div class="rvtt-datapad-section">
+        <div class="rvtt-datapad-divider">
+          <span class="rvtt-datapad-divider__label">Fashionware</span>
+        </div>
+        <div
+          style="
+            display: flex;
+            flex-direction: row;
+            gap: 12px;
+            align-items: flex-end;
+            width: fit-content;
+          "
+        >
+          <div style="display: flex; flex-direction: row; gap: 4px; align-items: center">
+            <label size="xs" variant="bold" textalign="left" label="Used Slots"></label>
+            <counter
+              field="usedFashionwareOptionSlots"
+              size="xs"
+              maxvaluefield="fashionwareOptionSlots"
+            ></counter>
+          </div>
+          <numberfield
+            field="fashionwareOptionSlots"
+            minvalue="1"
+            hideonlocked="true"
+            label="Max Slots"
+            width="100px"
+            size="xs"
+          ></numberfield>
+        </div>
+
+        <div style="margin-top: 4px">
+          <list
+            field="inventory"
+            listtype="cyberware_list"
+            variant="striped"
+            getfilters="return getCyberwareFiltersFor('fashionware');"
+            emptylisttext="No Fashionware Equipped"
+          ></list>
+        </div>
+      </div>
+    </box>
+
+    <!-- BORGWARE -->
+    <box field="panelBorgware" hidden="true">
+      <div class="rvtt-datapad-section">
+        <div class="rvtt-datapad-divider">
+          <span class="rvtt-datapad-divider__label">Borgware</span>
+        </div>
+        <list
+          field="inventory"
+          listtype="cyberware_list"
+          variant="striped"
+          getfilters="return getCyberwareFiltersFor('borgware');"
+          emptylisttext="No Borgware Equipped"
+        ></list>
+      </div>
+    </box>
+
+    <!-- CYBERWARE WITHIN GEAR (does not count towards HL) -->
+    <box field="panelGear" hidden="true">
+      <div class="rvtt-datapad-section">
+        <div class="rvtt-datapad-divider">
+          <span class="rvtt-datapad-divider__label">Cyberware within Gear</span>
+        </div>
+        <list
+          field="inventory"
+          listtype="cyberware_list"
+          variant="striped"
+          getfilters="return getCyberwareFiltersFor('gear');"
+          emptylisttext="No Cyberware Equipped within Gear"
+        ></list>
+      </div>
+    </box>
+  </div>
+</div>

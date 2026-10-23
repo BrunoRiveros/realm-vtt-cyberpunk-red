@@ -1,0 +1,93 @@
+<script>
+  function onTypeChange(value) {
+    const fieldsToSet = {};
+    if (value === "critical_injury") {
+      fieldsToSet["fields.effects.hidden"] = false;
+      fieldsToSet["fields.quick_fix.hidden"] = false;
+      fieldsToSet["fields.treatment.hidden"] = false;
+    } else if (value === "addiction") {
+      fieldsToSet["fields.effects.hidden"] = false;
+      fieldsToSet["fields.quick_fix.hidden"] = true;
+      fieldsToSet["fields.treatment.hidden"] = true;
+    } else if (value === "cover") {
+      fieldsToSet["fields.effects.hidden"] = false;
+      fieldsToSet["fields.quick_fix.hidden"] = true;
+      fieldsToSet["fields.treatment.hidden"] = true;
+    }
+    api.setValues(fieldsToSet);
+  }
+</script>
+
+<div
+  style="
+    display: flex;
+    gap: 4px;
+    flex-direction: column;
+    width: 100%;
+    margin-bottom: 4px;
+  "
+>
+  <div style="display: flex; gap: 4px">
+    <div
+      style="width: 125px; height: 125px; min-height: 125px; min-width: 125px"
+    >
+      <portrait width="125px" height="125px" field="portrait"></portrait>
+    </div>
+    <div
+      style="
+        display: flex;
+        gap: 4px;
+        flex-direction: column;
+        width: 100%;
+        margin-bottom: 4px;
+      "
+    >
+      <dropdown
+        size="sm"
+        width="100%"
+        field="type"
+        placeholder="Select Type"
+        onchange="onTypeChange(value);"
+        label="Condition Type"
+        options='[{"label": "Critical Injury", "value": "critical_injury"}, {"label": "Addiction", "value": "addiction"}, {"label": "Cover", "value": "cover"}]'
+      >
+      </dropdown>
+      <dropdown
+        size="sm"
+        field="effects"
+        label="Effects"
+        searchable="true"
+        multiselect="20"
+        optionsquery='{"type": "effects", "query": {}}'
+        placeholder="Select Effects..."
+      >
+      </dropdown>
+    </div>
+  </div>
+
+  <stringfield
+    placeholder="Enter Quick Fix..."
+    field="quick_fix"
+    multiline="true"
+    label="Quick Fix"
+    hidden="true"
+  ></stringfield>
+
+  <stringfield
+    placeholder="Enter Treatment..."
+    field="treatment"
+    multiline="true"
+    label="Treatment"
+    hidden="true"
+  ></stringfield>
+
+  <div style="margin-top: 8px; margin-bottom: 8px">
+    <divider label="Description"></divider>
+  </div>
+
+  <richtextfield
+    placeholder="Enter description..."
+    field="description"
+    label="Description"
+  ></richtextfield>
+</div>

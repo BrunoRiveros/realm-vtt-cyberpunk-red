@@ -1,0 +1,524 @@
+<script>
+  function onLoad() {
+    // On initial load of inventory, make sure filterList is not null
+    if (
+      record?.data?.filterList === undefined ||
+      record?.data?.filterList === null ||
+      record?.data?.filterByLocation === undefined ||
+      record?.data?.filterByLocation === null
+    ) {
+      api.setValues({
+        "data.filterList": "",
+        "data.filterByLocation": "",
+      });
+    }
+  }
+
+  function onDropItem(recordLink) {
+    const item = recordLink?.value;
+
+    const isDrug = item?.data?.type === "drug";
+    const isAmmo = item?.data?.type === "ammo";
+    const isAmmoWithValues =
+      isAmmo &&
+      ((item?.data?.effects && item?.data?.effects.length > 0) ||
+        (item?.data?.conditions && item?.data?.conditions.length > 0) ||
+        item?.data?.checkSkill ||
+        item?.data?.checkDV ||
+        item?.data?.healing ||
+        item?.data?.useDamage);
+    const isConsumable = item?.data?.consumable || false;
+    const hasUseBtn = item?.data?.hasUseBtn || false;
+
+    let unitCount = item.data?.count || 1;
+    // If ammo, get the unit count
+    if (item.data?.type === "ammo" && unitCount === 1) {
+      unitCount = item.data?.rounds || 1;
+    }
+
+    // Add the item and set the attunement hidden field to visible if requires attunement
+    const itemToAdd = {
+      ...item,
+      icon: "IconBox",
+      data: {
+        ...item?.data,
+        // Track old ID for count tracking
+        fromId: item._id,
+        // Default count to 1
+        count: unitCount,
+      },
+      fields: {
+        ...item?.fields,
+        useBtn: {
+          hidden: !isConsumable && !hasUseBtn && !isAmmoWithValues && !isDrug,
+        },
+      },
+    };
+
+    // Determine if we are adding the item or adding count to an existing item
+    const items = record?.data?.inventory || [];
+    const index = items.findIndex((i) => i.data?.fromId === item._id);
+
+    // If the item is an item pack, we're adding a list of items
+    if (item.data?.type === "pack") {
+      // Get the total weight of all items in the pack
+      const itemsInPack = item.data?.items || [];
+      const valuesToSet = {};
+      // Add any currency in pack to character
+      valuesToSet["data.cash"] =
+        (record?.data?.cash || 0) + (item.data?.cash || 0);
+      const itemsToAdd = itemsInPack
+        .map((item) => {
+          // If this is existing item, get the current count
+          let thisIndex = items.findIndex((i) => i.data?.fromId === item._id);
+          let existingItem = thisIndex !== -1 ? items[thisIndex] : undefined;
+          // Ignore cyberware, which we don't want to allow stacking
+          if (existingItem && existingItem.data?.type === "cyberware") {
+            thisIndex = -1;
+            existingItem = undefined;
+          }
+          let itemCount = parseFloat(item?.data?.count || "0");
+          const isConsumable = item.data?.consumable || false;
+          const isAmmo = item.data?.type === "ammo";
+          const isAmmoWithValues =
+            isAmmo &&
+            ((item.data?.effects && item.data?.effects.length > 0) ||
+              (item.data?.conditions && item.data?.conditions.length > 0) ||
+              item.data?.checkSkill ||
+              item.data?.checkDV ||
+              item.data?.healing ||
+              item.data?.useDamage);
+          // If ammo, multiply the unit count by the item count
+          if (isAmmo) {
+            itemCount = itemCount * (item.data?.rounds || 1);
+          }
+
+          let curCount = parseFloat(existingItem?.data?.count || "0");
+          if (!existingItem) {
+            return {
+              ...item,
+              icon: "IconBox",
+              data: {
+                ...item.data,
+                fromId: item._id,
+                count: itemCount,
+              },
+              fields: {
+                ...item?.fields,
+                useBtn: {
+                  hidden:
+                    !isConsumable && !hasUseBtn && !isAmmoWithValues && !isDrug,
+                },
+              },
+            };
+          } else {
+            valuesToSet[`data.inventory.${thisIndex}.data.count`] =
+              curCount + itemCount;
+          }
+        })
+        .filter((i) => i);
+      api.addValues(`data.inventory`, itemsToAdd, (record) => {
+        if (Object.keys(valuesToSet).length > 0) {
+          api.setValues(valuesToSet);
+        }
+      });
+    } else {
+      let existingItem = index !== -1 ? items[index] : undefined;
+      // Ignore cyberware, which we don't want to allow stacking
+      if (existingItem && existingItem.data?.type === "cyberware") {
+        existingItem = undefined;
+      }
+      if (existingItem) {
+        // Add count to existing item
+        const count = parseFloat(existingItem.data?.count || "0");
+        let unitCount = parseFloat(item.data?.count || "1");
+        // If ammo, get the unit count
+        if (existingItem.data?.type === "ammo" && unitCount === 1) {
+          unitCount = existingItem.data?.rounds || 1;
+        }
+        // Update the value
+        api.setValue(`data.inventory.${index}.data.count`, count + unitCount);
+      } else {
+        // Add the item to the list
+        api.addValue(`data.inventory`, itemToAdd);
+      }
+    }
+  }
+
+  function onDrop(type, recordLink, sourceInfo) {
+    if (type === "items") {
+      onDropItem(recordLink);
+      if (sourceInfo) {
+        if (sourceInfo?.type === "list") {
+          // Query for the record first, then remove the item from the source list
+          api.getRecord(
+            sourceInfo.recordType,
+            sourceInfo.recordId,
+            (sourceRecord) => {
+              api.removeValueFromRecord(
+                sourceRecord,
+                sourceInfo.dataPath,
+                sourceInfo.index
+              );
+            }
+          );
+        } else if (sourceInfo?.type === "partysheet") {
+          // Remove the item from party sheet
+          api.removePartySheetItem(sourceInfo.itemId);
+        }
+      }
+    }
+  }
+
+  function onItemDeleted() {
+    // Fetch the character record again to get latest data
+    const valuesToSet = {};
+
+    // Get the current ac due to armor and set it on the
+    // record
+    const bestEquippedArmor = getBestEquippedArmor(record);
+
+    // Update attributes as per modifiers
+    updateAttributes(valuesToSet, bestEquippedArmor.highestPenalty);
+
+    valuesToSet["data.headArmor"] = bestEquippedArmor.head[0]?.name || "";
+    valuesToSet["data.headArmorSP"] = bestEquippedArmor.head[0]?.curSp || 0;
+    valuesToSet["data.headArmorPenalty"] =
+      bestEquippedArmor.head[0]?.penalty || 0;
+    valuesToSet["data.bodyArmor"] = bestEquippedArmor.body[0]?.name || "";
+    valuesToSet["data.bodyArmorSP"] = bestEquippedArmor.body[0]?.curSp || 0;
+    valuesToSet["data.bodyArmorPenalty"] =
+      bestEquippedArmor.body[0]?.penalty || 0;
+    valuesToSet["data.shield"] = bestEquippedArmor.shield[0]?.name || "";
+    valuesToSet["data.shieldHP"] = bestEquippedArmor.shield[0]?.curSp || 0;
+    valuesToSet["data.shieldPenalty"] =
+      bestEquippedArmor.shield[0]?.penalty || 0;
+
+    // Update cyberware slots used as needed
+    if (Object.keys(valuesToSet).length > 0) {
+      api.setValues(valuesToSet, (record) => {
+        setCyberwareSlotValues(record);
+      });
+    } else {
+      setCyberwareSlotValues(record);
+    }
+  }
+
+  function getLocations() {
+    const inventory = record?.data?.inventory || [];
+    const locations = inventory.map((item) => item.data?.location || "");
+    // Filter out duplicates by creating a Set and converting back to array
+    // Also filter out empty strings
+    const uniqueLocations = [...new Set(locations)].filter(
+      (location) => location !== ""
+    );
+
+    // Always include the "All" option at the beginning
+    return [
+      { value: "", label: "All" },
+      ...uniqueLocations.map((location) => ({
+        value: location,
+        label: location,
+      })),
+    ];
+  }
+
+  function addCurrency() {
+    // Delay to ensure field values are updated before processing
+    api.delay(() => {
+      api.getRecord(record.recordType, record._id, (record2) => {
+        const addAmount = parseInt(record2?.data?.addCash || "0") || 0;
+        const newCash = (record2?.data?.cash || 0) + addAmount;
+
+        api.setValues({
+          "data.cash": newCash,
+          "data.addCash": "",
+        });
+        api.closeOpenedPopovers();
+      });
+    }, 300);
+  }
+
+  function deductCurrency() {
+    // Delay to ensure field values are updated before processing
+    api.delay(() => {
+      api.getRecord(record.recordType, record._id, (record2) => {
+        const deductAmount = parseInt(record2?.data?.deductCash || "0") || 0;
+        const currentCash = record2?.data?.cash || 0;
+
+        if (deductAmount > currentCash) {
+          api.showNotification("Not enough eddies!", "red", "Not Enough Cash");
+          return;
+        }
+
+        const newCash = currentCash - deductAmount;
+
+        api.setValues({
+          "data.cash": newCash,
+          "data.deductCash": "",
+        });
+        api.closeOpenedPopovers();
+      });
+    }, 300);
+  }
+
+  // Toggle between the row list and the grid of item tiles. The column-header
+  // row only makes sense for rows, so hide it in grid mode.
+  function onViewModeChange() {
+    const mode = api.getValue("data.inventoryViewMode") || "rows";
+    const headerFields = api.getValue("fields.listHeaderRow") || {};
+    api.setValues({
+      "fields.listHeaderRow": { ...headerFields, hidden: mode === "grid" },
+    });
+  }
+
+  // "Use" an inventory item from the grid popover. Delegates to the shared
+  // useItem(record, itemDataPath) in commonScript so the grid and the item-row
+  // Use button run identical logic.
+  function useGridItem(index) {
+    useItem(record, "data.inventory." + index);
+  }
+
+  // Equip/carry/drop from the grid: set the state, then run the shared equip
+  // handler (commonScript) so cyberware slots, armor SP, effects and Use-button
+  // visibility update exactly like the row's carried dropdown.
+  function equipGridItem(index, newValue) {
+    const itemDataPath = "data.inventory." + index;
+    api.setValue(itemDataPath + ".data.carried", newValue, function () {
+      // The in-memory `record` this script closes over is a snapshot — unlike a
+      // component onchange (which re-renders against a fresh one), this callback
+      // still sees the PREVIOUS carried state. getBestEquippedArmor() reads
+      // record.data.inventory directly, so without this the armor SP and the
+      // REF/DEX/MOVE penalty would land one step behind: still counting armor
+      // just unequipped, or missing armor just equipped. Mirror the new value
+      // across before handing off.
+      syncInventoryItemValue(itemDataPath, "carried", newValue);
+      onItemEquippedFor(itemDataPath, newValue);
+    });
+  }
+
+  // Zero-arg grid action wrappers — the state string lives here (JS), not in the
+  // cellactions JSON, so the attribute needs no nested quotes.
+  function gridEquip(index) {
+    equipGridItem(index, "equipped");
+  }
+  function gridCarry(index) {
+    equipGridItem(index, "carried");
+  }
+  function gridDrop(index) {
+    equipGridItem(index, "dropped");
+  }
+</script>
+
+<!-- Datapad-themed Cyberpunk RED inventory tab. All field bindings,
+     option functions and on* handlers preserved verbatim. -->
+<div
+  class="sheet--datapad sheet--datapad--cpr"
+  style="display: flex; flex-direction: column; gap: 8px; margin-top: 4px"
+>
+  <div class="rvtt-datapad-section">
+    <div class="rvtt-datapad-divider">
+      <span class="rvtt-datapad-divider__label">Inventory</span>
+    </div>
+
+    <div style="display: flex; flex-direction: row; gap: 4px">
+      <dropdown
+        field="filterList"
+        label="Filter by Type"
+        onload="onLoad()"
+        size="xs"
+        disablediflocked="false"
+        defaultvalue=""
+        options='[{"label": "All", "value": ""}, {"label": "Agent App", "value": "agent app"}, {"label": "Ammo", "value": "ammo"}, {"label": "Armor", "value": "armor"}, {"label": "Black ICE", "value": "black ice"}, {"label": "Cyberdeck", "value": "cyberdeck"}, {"label": "Cyberware", "value": "cyberware"}, {"label": "Demon", "value": "demon"}, {"label": "Drone", "value": "drone"}, {"label": "Drug", "value": "drug"}, {"label": "Fashion", "value": "fashion"}, {"label": "Gear", "value": "gear"}, {"label": "Item Pack", "value": "pack"}, {"label": "Melee Weapon", "value": "melee weapon"}, {"label": "Program or Hardware", "value": "program or hardware"}, {"label": "Ranged Weapon", "value": "ranged weapon"}, {"label": "Vehicle", "value": "vehicle"}, {"label": "Vehicle Upgrade", "value": "vehicle upgrade"}, {"label": "Weapon Attachment", "value": "weapon attachment"}]'
+      ></dropdown>
+      <dropdown
+        field="filterByLocation"
+        label="Filter by Location"
+        size="xs"
+        defaultvalue=""
+        placeholder="Select Location..."
+        optionsFunction="return getLocations();"
+        disablediflocked="false"
+      ></dropdown>
+      <div style="display: flex; align-items: flex-end">
+        <iconbutton
+          size="md"
+          variant="default"
+          field="inventoryViewMode"
+          defaultvalue="rows"
+          disablediflocked="false"
+          options='[{"icon": "IconLayoutList", "label": "List View", "value": "rows"}, {"icon": "IconLayoutGrid", "label": "Grid View", "value": "grid"}]'
+          onchange="onViewModeChange()"
+        ></iconbutton>
+      </div>
+      <div
+        style="
+          margin-left: auto;
+          display: flex;
+          flex-direction: row;
+          gap: 4px;
+          align-items: flex-end;
+        "
+      >
+        <numberfield
+          width="100px"
+          size="xs"
+          placeholder="0"
+          field="cash"
+          label="Cash"
+        ></numberfield>
+        <label variant="bold" size="xs" textalign="left" label="eb"></label>
+        <popover position="bottom" offset="4" witharrow="true">
+          <popover.target>
+            <iconbutton
+              size="md"
+              variant="default"
+              hideonlocked="true"
+              options='[{"icon": "IconPlus", "label": "Add Cash", "value": "add"}]'
+              field="addCurrencyBtn"
+            ></iconbutton>
+          </popover.target>
+          <popover.dropdown>
+            <div
+              style="
+                display: flex;
+                flex-direction: column;
+                gap: 4px;
+                width: 150px;
+              "
+            >
+              <label size="xs" variant="bold" label="Add Cash (eb)"></label>
+              <numberfield
+                placeholder="0"
+                field="addCash"
+                width="100%"
+                disablediflocked="false"
+              ></numberfield>
+              <button
+                size="xs"
+                variant="outline"
+                label="Add"
+                onclick="addCurrency();"
+              ></button>
+            </div>
+          </popover.dropdown>
+        </popover>
+        <popover position="bottom" offset="4" witharrow="true">
+          <popover.target>
+            <iconbutton
+              size="md"
+              variant="default"
+              hideonlocked="true"
+              options='[{"icon": "IconMinus", "label": "Deduct Cash", "value": "deduct"}]'
+              field="deductCurrencyBtn"
+            ></iconbutton>
+          </popover.target>
+          <popover.dropdown>
+            <div
+              style="
+                display: flex;
+                flex-direction: column;
+                gap: 4px;
+                width: 150px;
+              "
+            >
+              <label
+                size="xs"
+                variant="bold"
+                label="Deduct Cash (eb)"
+              ></label>
+              <numberfield
+                placeholder="0"
+                field="deductCash"
+                width="100%"
+                disablediflocked="false"
+              ></numberfield>
+              <button
+                size="xs"
+                variant="outline"
+                label="Deduct"
+                onclick="deductCurrency();"
+              ></button>
+            </div>
+          </popover.dropdown>
+        </popover>
+      </div>
+    </div>
+
+    <box field="listHeaderRow">
+    <div
+      class="rvtt-cpr-colhead"
+      style="display: flex; flex-direction: row; margin-top: 8px"
+    >
+      <div style="margin-left: 34px">
+        <label
+          class="rvtt-datapad-label rvtt-datapad-label--accent"
+          label="Count"
+        ></label>
+      </div>
+      <div style="margin-left: 30px; flex-grow: 1">
+        <label
+          class="rvtt-datapad-label rvtt-datapad-label--accent"
+          label="Item"
+        ></label>
+      </div>
+      <div
+        style="
+          margin-left: 4px;
+          max-width: 100px;
+          min-width: 68px;
+          flex: 1;
+          display: flex;
+        "
+      >
+        <label
+          class="rvtt-datapad-label rvtt-datapad-label--accent"
+          label="Location"
+        ></label>
+      </div>
+      <div
+        style="
+          margin-left: 4px;
+          max-width: 95px;
+          min-width: 65px;
+          flex: 1;
+          display: flex;
+        "
+      >
+        <label
+          class="rvtt-datapad-label rvtt-datapad-label--accent"
+          label="Equipped"
+        ></label>
+      </div>
+      <box field="spacerRight" hideonlocked="true">
+        <div style="width: 16px"></div>
+      </box>
+    </div>
+    </box>
+
+    <div style="display: flex; flex-direction: column; flex-grow: 1">
+      <list
+        listtype="inventory_list"
+        radius="none"
+        variant="striped"
+        field="inventory"
+        onchange="onItemDeleted();"
+        layout="rows"
+        layoutfield="data.inventoryViewMode"
+        cellsize="56"
+        countfield="data.count"
+        equipfield="data.carried"
+        equippedvalue="equipped"
+        droppedvalue="dropped"
+        descriptionfield="data.description"
+        celltooltipfields='[{"label": "Type", "field": "data.type", "capitalize": true}, {"label": "Location", "field": "data.location"}]'
+        cellactions='[{"label": "Equip", "fn": "gridEquip(data.itemIndex)", "icon": "IconShirt"}, {"label": "Carry (Unequip)", "fn": "gridCarry(data.itemIndex)", "icon": "IconBackpack"}, {"label": "Drop", "fn": "gridDrop(data.itemIndex)", "icon": "IconArrowDown"}]'
+        celluse="useGridItem(data.itemIndex)"
+        celluselabel="Use"
+        celluseshowfield="fields.useBtn.hidden"
+        celluseshowvalue="false"
+      >
+      </list>
+    </div>
+  </div>
+</div>

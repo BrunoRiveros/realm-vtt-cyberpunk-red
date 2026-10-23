@@ -1,0 +1,591 @@
+<script>
+  function rollAttack(type, range = "auto") {
+    // Close the popover if it's open
+    api.closeOpenedPopovers();
+    // Get weapon path
+    const weaponDataPath = getNearestParentDataPath(dataPath);
+    const weapon = api.getValue(weaponDataPath);
+
+    performAttackRoll(record, weapon, weaponDataPath, type, range);
+  }
+
+  function rollDamage(type = "single") {
+    const weaponDataPath = getNearestParentDataPath(dataPath);
+    const weapon = api.getValue(weaponDataPath);
+
+    performDamageRoll(record, weapon, type);
+  }
+
+  function reload() {
+    // Check if we have enough ammo then deduct ammo up to amount in magazine
+    const weaponDataPath = getNearestParentDataPath(dataPath);
+    const weapon = api.getValue(weaponDataPath);
+
+    if (weapon.data?.type === "melee weapon") {
+      return;
+    }
+
+    let magazineSize = weapon.data?.magazine || 0;
+    // Check all attachments for magazine size, get largest
+    const attachments = weapon.data?.attachments || [];
+    attachments.forEach((attachment) => {
+      if (
+        attachment.data?.attachmentType === "magazine" &&
+        attachment.data?.magazineSize > magazineSize &&
+        attachment.data?.active
+      ) {
+        magazineSize = attachment.data?.magazineSize;
+      }
+    });
+
+    const amountInWeapon = parseInt(weapon.data?.ammoCount, 10) || 0;
+    const amountToReload = magazineSize - amountInWeapon;
+
+    if (amountToReload <= 0) {
+      return; // Already full
+    }
+
+    const ammo = weapon.data?.ammo;
+    if (!ammo) {
+      api.showNotification(
+        "You need to select equipped ammo first!",
+        "red",
+        "No Ammo"
+      );
+      return;
+    }
+
+    const ammoObject = JSON.parse(ammo);
+
+    let hasEnoughAmmo = false;
+    const inventory = record.data?.inventory || [];
+    inventory.forEach((item, index) => {
+      if (item._id === ammoObject?._id) {
+        const count = parseInt(item.data?.count, 10) || 0;
+        if (count > 0) {
+          // Calculate how much we can actually reload
+          const amountToDeduct = Math.min(count, amountToReload);
+          const newCount = count - amountToDeduct;
+          api.setValues({
+            [`data.inventory.${index}.data.count`]: newCount,
+            [`${weaponDataPath}.data.ammoCount`]:
+              amountInWeapon + amountToDeduct,
+          });
+          hasEnoughAmmo = true;
+        }
+      }
+    });
+
+    if (!hasEnoughAmmo) {
+      api.showNotification("You are out of ammo!", "red", "Out of Ammo");
+    }
+  }
+
+  function showHideAttachments() {
+    const dataPathToWeapon = getNearestParentDataPath(dataPath);
+    const weapon = api.getValue(dataPathToWeapon);
+
+    let pathToAttachmentFields = "fields";
+    if (dataPathToWeapon !== "") {
+      pathToAttachmentFields = `${dataPathToWeapon}.fields`;
+    }
+
+    const showingAttachments = weapon?.fields?.attachments?.hidden !== true;
+    const attachments = weapon?.data?.attachments || [];
+    // If we're showing attachments list and we no have attachments, then hide it
+    const showAttachments = attachments.length > 0;
+
+    const dot = dataPathToWeapon !== "" ? "." : "";
+
+    if (showingAttachments && !showAttachments) {
+      api.setValues({
+        [`${pathToAttachmentFields}.attachments.hidden`]: true,
+      });
+    } else if (!showingAttachments && showAttachments) {
+      api.setValues({
+        [`${pathToAttachmentFields}.attachments.hidden`]: false,
+      });
+    }
+
+    // Hide the attack divider box if this is an attachment
+    const isAttachment = dataPath.match(/\.data\.attachments\.\d+/) !== null;
+    const isShowingAttackDivider =
+      weapon?.fields?.attackDividerBox?.hidden !== true;
+    if (isAttachment && isShowingAttackDivider) {
+      api.setValues({
+        [`${pathToAttachmentFields}.attackDividerBox.hidden`]: true,
+        [`${pathToAttachmentFields}.attackDividerBox.hidden`]: true,
+      });
+    }
+  }
+
+  function onChangeAmmo(value) {
+    const weaponDataPath = dataPath.replace(".data.ammo", "");
+    const weapon = api.getValue(weaponDataPath);
+
+    // Get the Ammo item
+    const selectedAmmo = value;
+    if (selectedAmmo) {
+      try {
+        const ammoId = JSON.parse(selectedAmmo)?._id;
+        if (ammoId) {
+          let ammoIndex = -1;
+          const ammo = record.data.inventory.find((item, index) => {
+            if (item._id === ammoId) {
+              ammoIndex = index;
+              return true;
+            }
+            return false;
+          });
+          if (ammo) {
+            // Found the ammo
+            const hasUseSpecial =
+              ammo?.data?.useDamage ||
+              (ammo?.data?.effects || []).length > 0 ||
+              (ammo?.data?.conditions || []).length > 0 ||
+              (ammo?.data?.checkDV || 0) > 0 ||
+              ammo?.data?.healing;
+            api.setValues({
+              [`${weaponDataPath}.fields.useSpecialBtn.hidden`]: !hasUseSpecial,
+            });
+          }
+        }
+      } catch (error) {
+        // Do nothing on JSON parse error
+      }
+    }
+  }
+
+  function getCyberwareWeaponFilters() {
+    // Cyberware weapons are not carried, so we need to cancel that filter out
+    const filters = [
+      {
+        field: "carried",
+        operation: "not_equals",
+        value: "carried",
+        isOr: true,
+      },
+    ];
+    return filters;
+  }
+
+  function ammoOptions() {
+    // Get a list of equipped ammo
+    let equippedAmmo = record.data?.inventory?.filter(
+      (item) => item.data.carried === "equipped" && item.data.type === "ammo"
+    );
+
+    // If this is an NPC, don't worry if the ammo is not equipped
+    if (record.recordType === "npcs") {
+      equippedAmmo = record.data?.inventory?.filter(
+        (item) => item.data.type === "ammo"
+      );
+    }
+
+    if (equippedAmmo.length > 0) {
+      return equippedAmmo.map((ammo) => ({
+        value: JSON.stringify({
+          _id: ammo._id,
+          name: ammo.name,
+          isShell: ammo.data.isShell,
+        }),
+        label: ammo.name,
+      }));
+    } else {
+      return [{ value: "none", label: "None" }];
+    }
+  }
+
+  function useAmmo() {
+    const weaponDataPath = dataPath.replace(".data.useSpecialBtn", "");
+    const weapon = api.getValue(weaponDataPath);
+
+    // Get the Ammo item
+    const selectedAmmo = weapon?.data?.ammo;
+    if (selectedAmmo) {
+      const ammoId = JSON.parse(selectedAmmo)?._id;
+      if (ammoId) {
+        let ammoIndex = -1;
+        const ammo = record.data.inventory.find((item, index) => {
+          if (item._id === ammoId) {
+            ammoIndex = index;
+            return true;
+          }
+          return false;
+        });
+        if (ammo) {
+          // Found the ammo, now use it
+          useItem(record, `data.inventory.${ammoIndex}`);
+        }
+      }
+    }
+  }
+</script>
+
+<box field="generalWeaponProperties" hidden="false">
+  <!-- Main row for icon, name, buttons -->
+  <div
+    class="rvtt-cpr-row"
+    style="
+      display: flex;
+      flex-direction: row;
+      gap: 4px;
+      align-items: flex-start;
+    "
+  >
+    <div style="width: 64px; height: 64px; min-width: 64px; min-height: 64px">
+      <portrait width="64px" height="64px" field="portrait"></portrait>
+    </div>
+    <div style="width: 100%; align-self: center">
+      <namefield
+        field="namefield"
+        variant="tooltip-underline"
+        placeholder="Weapon Name..."
+      ></namefield>
+    </div>
+
+    <!-- Buttons for Attacks, to be Shown/Hidden based on Weapon type -->
+    <div style="display: flex; flex-direction: column; gap: 4px">
+      <div
+        style="
+          display: flex;
+          flex-direction: row;
+          gap: 2px;
+          justify-content: center;
+          width: 95px;
+        "
+      >
+        <!-- Autofire  -->
+        <iconbutton
+          size="md"
+          hidden="false"
+          field="autoFireBtn"
+          color="secondary"
+          variant="light"
+          options='[{"icon": "GiBullets", "label": "Autofire", "value": "autofire"}]'
+          onclick="rollAttack('autofire')"
+        ></iconbutton>
+        <!-- Single Shot / Melee Attack -->
+        <iconbutton
+          size="md"
+          hidden="false"
+          variant="light"
+          field="attackBtn"
+          color="primary"
+          options='[{"icon": "D10", "label": "Attack", "value": "attack"}]'
+          onclick="rollAttack('single')"
+        ></iconbutton>
+        <!-- Suppressive Fire -->
+        <iconbutton
+          size="md"
+          hidden="false"
+          variant="light"
+          field="suppressiveFireBtn"
+          color="tertiary"
+          options='[{"icon": "GiHeavyRain", "label": "Suppressive Fire", "value": "suppressiveFire"}]'
+          onclick="rollAttack('suppressive')"
+        ></iconbutton>
+      </div>
+      <!-- Reload -->
+      <div
+        style="
+          display: flex;
+          flex-direction: row;
+          gap: 2px;
+          align-items: center;
+          width: 98px;
+        "
+      >
+        <popover>
+          <popover.target>
+            <iconbutton
+              size="md"
+              hidden="false"
+              field="attackByRangeBtn"
+              variant="default"
+              options='[{"icon": "IconRulerMeasure", "label": "Attack by Range", "value": "attackByRange"}]'
+            ></iconbutton>
+          </popover.target>
+          <popover.dropdown>
+            <div
+              style="display: flex; flex-direction: column; max-width: 510px"
+            >
+              <box field="dvProperties">
+                <!-- Here we show attack by range buttons -->
+                <label
+                  variant="bold"
+                  label="Single Shot by Range"
+                  size="xs"
+                ></label>
+                <div
+                  style="
+                    display: flex;
+                    flex-direction: row;
+                    gap: 2px;
+                    flex-wrap: wrap;
+                    justify-content: flex-start;
+                  "
+                >
+                  <button
+                    size="xs"
+                    variant="default"
+                    label="0 to 6 m/yds"
+                    field="singleShot0to6Btn"
+                    width="125px"
+                    onclick="rollAttack('single', '0to6')"
+                  ></button>
+                  <button
+                    size="xs"
+                    variant="default"
+                    label="7 to 12 m/yds"
+                    field="singleShot7to12Btn"
+                    width="125px"
+                    onclick="rollAttack('single', '7to12')"
+                  ></button>
+                  <button
+                    size="xs"
+                    variant="default"
+                    label="13 to 25 m/yds"
+                    field="singleShot13to25Btn"
+                    width="125px"
+                    onclick="rollAttack('single', '13to25')"
+                  ></button>
+                  <button
+                    size="xs"
+                    variant="default"
+                    label="26 to 50 m/yds"
+                    field="singleShot26to50Btn"
+                    width="125px"
+                    onclick="rollAttack('single', '26to50')"
+                  ></button>
+                  <button
+                    size="xs"
+                    variant="default"
+                    label="51 to 100 m/yds"
+                    field="singleShot51to100Btn"
+                    width="125px"
+                    onclick="rollAttack('single', '51to100')"
+                  ></button>
+                  <button
+                    size="xs"
+                    variant="default"
+                    label="101 to 200 m/yds"
+                    field="singleShot101to200Btn"
+                    width="125px"
+                    onclick="rollAttack('single', '101to200')"
+                  ></button>
+                  <button
+                    size="xs"
+                    variant="default"
+                    label="201 to 400 m/yds"
+                    field="singleShot201to400Btn"
+                    width="125px"
+                    onclick="rollAttack('single', '201to400')"
+                  ></button>
+                  <button
+                    size="xs"
+                    variant="default"
+                    label="401 to 800 m/yds"
+                    field="singleShot401to800Btn"
+                    width="125px"
+                    onclick="rollAttack('single', '401to800')"
+                  ></button>
+                </div>
+              </box>
+              <box field="afDvProperties">
+                <!-- Here we show attack by range buttons -->
+                <div style="margin-top: 4px">
+                  <label
+                    variant="bold"
+                    label="Autofire by Range"
+                    size="xs"
+                  ></label>
+                </div>
+                <div
+                  style="
+                    display: flex;
+                    flex-direction: row;
+                    gap: 2px;
+                    flex-wrap: wrap;
+                    justify-content: flex-start;
+                  "
+                >
+                  <button
+                    size="xs"
+                    variant="default"
+                    label="0 to 6 m/yds"
+                    field="autofire0to6Btn"
+                    width="125px"
+                    onclick="rollAttack('autofire', '0to6')"
+                  ></button>
+                  <button
+                    size="xs"
+                    variant="default"
+                    label="7 to 12 m/yds"
+                    field="autofire7to12Btn"
+                    width="125px"
+                    onclick="rollAttack('autofire', '7to12')"
+                  ></button>
+                  <button
+                    size="xs"
+                    variant="default"
+                    label="13 to 25 m/yds"
+                    field="autofire13to25Btn"
+                    width="125px"
+                    onclick="rollAttack('autofire', '13to25')"
+                  ></button>
+                  <button
+                    size="xs"
+                    variant="default"
+                    label="26 to 50 m/yds"
+                    field="autofire26to50Btn"
+                    width="125px"
+                    onclick="rollAttack('autofire', '26to50')"
+                  ></button>
+                  <button
+                    size="xs"
+                    variant="default"
+                    label="51 to 100 m/yds"
+                    field="autofire51to100Btn"
+                    width="125px"
+                    onclick="rollAttack('autofire', '51to100')"
+                  ></button>
+                </div>
+              </box>
+            </div>
+          </popover.dropdown>
+        </popover>
+        <button
+          size="xs"
+          hidden="false"
+          field="reloadBtn"
+          variant="default"
+          label="Reload"
+          onclick="reload()"
+        ></button>
+      </div>
+    </div>
+
+    <!-- Ammo List and Ammo Buttons -->
+    <div
+      style="
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        align-items: flex-start;
+        min-width: 125px;
+      "
+    >
+      <dropdown
+        field="ammo"
+        width="125px"
+        size="xs"
+        placeholder="Select Ammo..."
+        optionsFunction="return ammoOptions();"
+        onchange="onChangeAmmo(value);"
+        disablediflocked="false"
+      ></dropdown>
+      <button
+        size="xs"
+        width="125px"
+        field="useSpecialBtn"
+        variant="default"
+        label="Use Special"
+        icon="IconWalk"
+        onclick="useAmmo();"
+      ></button>
+    </div>
+
+    <!-- Ammo Count and Damage Button -->
+    <div
+      style="
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        align-items: flex-start;
+        width: fit-content;
+      "
+    >
+      <div
+        style="display: flex; flex-direction: row; gap: 4px; min-width: 105px"
+      >
+        <button
+          size="xs"
+          label="Damage"
+          field="singleDmgBtn"
+          width="100%"
+          variant="light"
+          hidden="false"
+          color="primary"
+          onclick="rollDamage('single');"
+        ></button>
+        <button
+          size="xs"
+          label="DMG"
+          field="singleDmgBtnWhenAf"
+          variant="light"
+          hidden="true"
+          color="primary"
+          onclick="rollDamage('single');"
+        ></button>
+        <button
+          size="xs"
+          field="afDmgBtn"
+          label="AF"
+          hidden="true"
+          variant="light"
+          color="secondary"
+          onclick="rollDamage('autofire');"
+        ></button>
+      </div>
+      <div
+        style="display: flex; flex-direction: row; gap: 4px; min-width: 100px"
+      >
+        <numberfield
+          field="ammoCount"
+          size="xs"
+          label="Ammo Remaining"
+          width="60%"
+          variant="tooltip"
+          placeholder="0"
+        ></numberfield>
+        <div style="margin-left: auto; width: 40%">
+          <numberfield
+            field="rof"
+            size="xs"
+            width="100%"
+            variant="tooltip"
+            label="Rate of Fire"
+            placeholder="0"
+            hidecontrols="true"
+            editable="false"
+          ></numberfield>
+        </div>
+      </div>
+    </div>
+  </div>
+</box>
+
+<!-- Nested Attack List for Cyberware Weapon - shown if this a cyberware attack -->
+<box field="cyberwareWeaponProperties" hidden="true">
+  <list
+    field="weaponAttached"
+    hidden="true"
+    listtype="attack_list"
+    variant="standard"
+    getfilters="return getCyberwareWeaponFilters();"
+  ></list>
+</box>
+
+<list
+  onload="showHideAttachments()"
+  field="attachments"
+  listtype="attack_attachment_list"
+  hidden="true"
+></list>
+
+<box field="attackDividerBox" hidden="false">
+  <div style="margin-top: 2px">
+    <divider field="attackDivider"></divider>
+  </div>
+</box>

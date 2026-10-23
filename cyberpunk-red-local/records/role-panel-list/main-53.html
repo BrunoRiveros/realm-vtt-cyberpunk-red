@@ -1,0 +1,2108 @@
+<script>
+  function moveUp() {
+    const dataPathToRole = dataPath.replace(".data.moveUpBtn", "");
+    const role = api.getValue(dataPathToRole);
+    const thisOrder = role.data?.order || 1;
+
+    if (thisOrder === 1) {
+      return;
+    }
+
+    // Get all roles to find the one directly previous in order
+    const roles = record.data?.roles || [];
+
+    if (!roles || !Array.isArray(roles)) {
+      return;
+    }
+
+    // Find the role with the next lowest order (the one directly above this one)
+    let previousRole = null;
+    let previousRoleDataPath = "";
+    let previousOrder = 0;
+    roles.forEach((r, roleIndex) => {
+      const orderValue = r.data?.order || 0;
+      if (orderValue < thisOrder && orderValue > previousOrder) {
+        previousOrder = orderValue;
+        previousRole = r;
+        previousRoleDataPath = `data.roles.${roleIndex}`;
+      }
+    });
+
+    if (!previousRole) {
+      return; // No previous role found
+    }
+
+    // Swap the orders of the two roles
+    const valuesToSet = {
+      [`${dataPathToRole}.data.order`]: previousOrder,
+      [`${previousRoleDataPath}.data.order`]: thisOrder,
+    };
+
+    api.setValues(valuesToSet, (updatedRecord) => {
+      updateRoles(updatedRecord);
+    });
+  }
+
+  function getFiltersForActiveFeaturesList() {
+    // Only show features where rank is <= our own rank
+    const nearestParentDataPath = getNearestParentDataPath(dataPath);
+    const role = api.getValue(nearestParentDataPath);
+    if (!role) {
+      return [];
+    }
+
+    const rank = role.data?.rank || 1;
+
+    const filters = [...Array(rank).keys()].map((i) => ({
+      field: "rank",
+      operator: "equals",
+      value: i + 1,
+      isOr: true,
+    }));
+
+    return filters;
+  }
+
+  function getFiltersForCryosystemFeaturesList() {
+    // Only show features where rank is <= our cryosystem operation
+    const nearestParentDataPath = getNearestParentDataPath(dataPath);
+    const role = api.getValue(nearestParentDataPath);
+    if (!role) {
+      return [];
+    }
+
+    const cryosystemOperation = role.data?.cryosystemOperation || 0;
+
+    if (cryosystemOperation === 0) {
+      return [
+        {
+          field: "rank",
+          operator: "equals",
+          value: 0,
+          isOr: true,
+        },
+      ];
+    }
+
+    const filters = [...Array(cryosystemOperation).keys()].map((i) => ({
+      field: "rank",
+      operator: "equals",
+      value: i + 1,
+      isOr: true,
+    }));
+
+    return filters;
+  }
+
+  function updateRank() {
+    updateRoles(record);
+  }
+
+  function canAddExecTeamMember() {
+    return value?.data?.type === "team member";
+  }
+
+  function rollHaggle() {
+    const nearestParentDataPath = getNearestParentDataPath(dataPath);
+    const role = api.getValue(nearestParentDataPath);
+
+    // HAGGLE is COOL + Trading Skill + Operator Rank + 1d10 against
+    // NPC COOL + Trading Skill + Their Operator Rank (if they are a Fixer) + 1d10.
+    performSkillRoll(record, "Trading", {
+      isDodge: false,
+      defenderSkill: "Trading",
+      roleAbility: "Fixer",
+      abilityName: "Haggle",
+    });
+  }
+
+  function rollRumors(type) {
+    const nearestParentDataPath = getNearestParentDataPath(dataPath);
+    const role = api.getValue(nearestParentDataPath);
+    const rumors = role.data?.rumors || [];
+
+    // Store possible results and associated DVs
+    const results = [];
+    rumors.forEach((rumor) => {
+      results.push({
+        result: `(${rumor.data?.rumorType}) ${rumor.data?.rumor}`,
+        type: "rumor",
+        dv: type === "passive" ? rumor.data?.passiveDV : rumor.data?.activeDV,
+      });
+    });
+
+    if (type === "passive") {
+      // Roll 1d10 + Role Rank against the table
+      performSkillRoll(record, "Passive Rumors", {
+        isDodge: false,
+        roleAbility: "Media",
+        dvTable: results,
+      });
+    } else if (type === "active") {
+      // Roll 1d10 + Chosen Skill against the table
+      performSkillRoll(record, "Library Search", {
+        isDodge: false,
+        abilityName: "Active Rumors",
+        dvTable: results,
+      });
+    }
+  }
+
+  function rollBelievability() {
+    // This is a roll under rank ability, using the evidence bonus
+    const nearestParentDataPath = getNearestParentDataPath(dataPath);
+    const role = api.getValue(nearestParentDataPath);
+    const evidenceBonus = role.data?.evidenceBonus || 0;
+
+    // Get DV by rank
+    const rank = role.data?.rank || 1;
+    let dv = role.data?.believabilityDV1 || 0;
+    if (role.data?.rank === 2) {
+      dv = role.data?.believabilityDV2 || 0;
+    } else if (role.data?.rank === 3) {
+      dv = role.data?.believabilityDV3 || 0;
+    } else if (role.data?.rank === 4) {
+      dv = role.data?.believabilityDV4 || 0;
+    } else if (role.data?.rank === 5) {
+      dv = role.data?.believabilityDV5 || 0;
+    } else if (role.data?.rank === 6) {
+      dv = role.data?.believabilityDV6 || 0;
+    } else if (role.data?.rank === 7) {
+      dv = role.data?.believabilityDV7 || 0;
+    } else if (role.data?.rank === 8) {
+      dv = role.data?.believabilityDV8 || 0;
+    } else if (role.data?.rank === 9) {
+      dv = role.data?.believabilityDV9 || 0;
+    } else {
+      dv = role.data?.believabilityDV10 || 0;
+    }
+
+    performSkillRoll(record, "Believability", {
+      isDodge: false,
+      roleAbility: "Media",
+      abilityName: "Believability",
+      rollUnderOrEqual: true,
+      bonus: evidenceBonus,
+      dv: dv,
+    });
+  }
+
+  function updateSurgery() {
+    const nearestParentDataPath = getNearestParentDataPath(dataPath);
+    const role = api.getValue(nearestParentDataPath);
+    const roleRank = role.data?.rank || 0;
+    const surgery = role.data?.surgery || 0;
+    const pharmaceuticals = role.data?.pharmaceuticals || 0;
+    const cryosystemOperation = role.data?.cryosystemOperation || 0;
+    // Set surgey skill level to 2 * surgery
+    const surgerySkillLevel = surgery * 2;
+
+    // Set unallocated ranks to role rank - surgery - med tech - pharmaceuticals - cryosystem operation
+    const unallocatedRanks =
+      roleRank - surgery - pharmaceuticals - cryosystemOperation;
+
+    api.setValues({
+      [`${nearestParentDataPath}.data.surgerySkillLevel`]: surgerySkillLevel,
+      [`${nearestParentDataPath}.data.unallocatedRanks`]: unallocatedRanks,
+    });
+  }
+
+  function updatePharmaceuticals() {
+    const nearestParentDataPath = getNearestParentDataPath(dataPath);
+    const role = api.getValue(nearestParentDataPath);
+    const roleRank = role.data?.rank || 0;
+    const surgery = role.data?.surgery || 0;
+    const pharmaceuticals = role.data?.pharmaceuticals || 0;
+    const cryosystemOperation = role.data?.cryosystemOperation || 0;
+
+    // Set unallocated ranks to role rank - surgery - med tech - pharmaceuticals - cryosystem operation
+    const unallocatedRanks =
+      roleRank - surgery - pharmaceuticals - cryosystemOperation;
+    // Set medical tech to pharmaceuticals + cryosystem operation
+    const medicalTech = pharmaceuticals + cryosystemOperation;
+
+    api.setValues({
+      [`${nearestParentDataPath}.data.unallocatedRanks`]: unallocatedRanks,
+      [`${nearestParentDataPath}.data.medicalTech`]: medicalTech,
+    });
+  }
+
+  function updateCryosystemOperation() {
+    const nearestParentDataPath = getNearestParentDataPath(dataPath);
+    const role = api.getValue(nearestParentDataPath);
+    const roleRank = role.data?.rank || 0;
+    const surgery = role.data?.surgery || 0;
+    const pharmaceuticals = role.data?.pharmaceuticals || 0;
+    const cryosystemOperation = role.data?.cryosystemOperation || 0;
+
+    // Set unallocated ranks to role rank - surgery - med tech - pharmaceuticals - cryosystem operation
+    const unallocatedRanks =
+      roleRank - surgery - pharmaceuticals - cryosystemOperation;
+    // Set medical tech to pharmaceuticals + cryosystem operation
+    const medicalTech = pharmaceuticals + cryosystemOperation;
+
+    api.setValues({
+      [`${nearestParentDataPath}.data.unallocatedRanks`]: unallocatedRanks,
+      [`${nearestParentDataPath}.data.medicalTech`]: medicalTech,
+    });
+  }
+
+  function rollSurgery() {
+    const nearestParentDataPath = getNearestParentDataPath(dataPath);
+    const role = api.getValue(nearestParentDataPath);
+    const surgery = role.data?.surgery || 0;
+    const surgerySkillLevel = role.data?.surgerySkillLevel || 0;
+
+    performSkillRoll(record, "Surgery", {
+      isDodge: false,
+      roleAbility: "Medtech",
+      abilityName: "Surgery",
+      skillLevel: surgerySkillLevel,
+      statName: "tech",
+    });
+  }
+
+  function rollMedicalTech() {
+    const nearestParentDataPath = getNearestParentDataPath(dataPath);
+    const role = api.getValue(nearestParentDataPath);
+    const medicalTech = role.data?.medicalTech || 0;
+
+    performSkillRoll(record, "Medical Tech", {
+      isDodge: false,
+      roleAbility: "Medtech",
+      abilityName: "Medical Tech",
+      skillLevel: medicalTech,
+      statName: "tech",
+    });
+  }
+
+  function rollSynthesize() {
+    const nearestParentDataPath = getNearestParentDataPath(dataPath);
+    const role = api.getValue(nearestParentDataPath);
+    // Synthesize is a DV 13 Medical Tech check
+    const medicalTech = role.data?.medicalTech || 0;
+    const dv = role.data?.synthesisDV || 13;
+
+    performSkillRoll(record, "Synthesize", {
+      isDodge: false,
+      roleAbility: "Medtech",
+      abilityName: "Medical Tech",
+      skillLevel: medicalTech,
+      statName: "tech",
+      dv: dv,
+    });
+  }
+
+  function isPharmaceutical(value) {
+    return value?.data?.type === "drug";
+  }
+
+  function rollInterface(abilityName = "Interface") {
+    const nearestParentDataPath = getNearestParentDataPath(dataPath);
+    const role = api.getValue(nearestParentDataPath);
+    // 'interface' is a strict-mode reserved word; use interfaceLevel instead.
+    const interfaceLevel = role.data?.rank || 0;
+
+    let defenderSkill = undefined;
+    if (abilityName === "Zap") {
+      defenderSkill = "Interface or DEF";
+    } else if (abilityName === "Destroy") {
+      defenderSkill = "ATK";
+    } else if (abilityName === "Slide") {
+      defenderSkill = "PER";
+    }
+
+    performSkillRoll(record, "Interface", {
+      isDodge: false,
+      roleAbility: "Netrunner",
+      defenderSkill: defenderSkill,
+      abilityName: abilityName,
+      skillLevel: interfaceLevel,
+    });
+  }
+
+  function rollZapDamage() {
+    const nearestParentDataPath = getNearestParentDataPath(dataPath);
+    const role = api.getValue(nearestParentDataPath);
+    const zapDamage = role.data?.zapDamage || "1d6";
+
+    const modifiers = [];
+    const damageMetadata = {
+      rollName: "Damage",
+      tooltip: "Damage with Zap",
+      weaponName: "Zap",
+      isMelee: false,
+      targetedLocation: "body",
+      ignoresArmorUnder: 100,
+      nonLethal: false,
+      nonLethalGreaterThanOne: false,
+      noArmorAblation: true,
+      noCriticalInjuries: true,
+    };
+
+    if (record.linked === undefined) {
+      api.promptRoll(
+        `ZAP Damage`,
+        zapDamage,
+        modifiers,
+        damageMetadata,
+        "damage"
+      );
+    } else {
+      api.promptRollForToken(
+        record,
+        `Damage with ${weapon.name}`,
+        damage,
+        modifiers,
+        damageMetadata,
+        "damage"
+      );
+    }
+  }
+
+  function rollVehicleFamiliarity(abilityName) {
+    const nearestParentDataPath = getNearestParentDataPath(dataPath);
+    const role = api.getValue(nearestParentDataPath);
+    // The bonus is their rank in the Nomad Role
+    const vehicleFamiliarity = role.data?.rank || 0;
+
+    performSkillRoll(record, abilityName, {
+      isDodge: false,
+      roleAbility: "Moto",
+      abilityName: "Vehicle Familiarity",
+      bonus: vehicleFamiliarity,
+    });
+  }
+
+  function rollCharismaticImpact(groupSize) {
+    const nearestParentDataPath = getNearestParentDataPath(dataPath);
+    const role = api.getValue(nearestParentDataPath);
+
+    let dv = role.data?.singleImpactDV || 0;
+    if (groupSize === "small") {
+      dv = role.data?.groupImpactDV || 0;
+    } else if (groupSize === "huge") {
+      dv = role.data?.hugeGroupImpactDV || 0;
+    }
+
+    performSkillRoll(record, "Charismatic Impact", {
+      isDodge: false,
+      roleAbility: "Rockerboy",
+      abilityName: "Charismatic Impact",
+      dv: dv,
+    });
+  }
+
+  function updateSoloRanks() {
+    const nearestParentDataPath = getNearestParentDataPath(dataPath);
+    const role = api.getValue(nearestParentDataPath);
+
+    // Número entero, nunca negativo
+    const toNum = (v) => Math.max(0, Math.floor(Number(v) || 0));
+
+    const roleRank = toNum(role.data?.rank);
+
+    // Tope individual de cada habilidad
+    const caps = {
+      damageDeflectionRank: Infinity,
+      fumbleRecoveryRank: 2,
+      initiativeReactionRank: Infinity,
+      precisionAttackRank: 6,
+      spotWeaknessRank: Infinity,
+      threatDetectionRank: Infinity,
+    };
+
+    // Valores tal como están guardados
+    const stored = {};
+    for (const key in caps) {
+      stored[key] = role.data?.[key];
+    }
+
+    // Detectar qué habilidad se acaba de editar y usar el valor nuevo
+    const changedKey = String(dataPath || "").split(".").pop();
+    const isRankField = changedKey in caps;
+    let typedValue;
+    if (isRankField) {
+      typedValue =
+        typeof value !== "undefined" ? value : api.getValue(dataPath);
+    }
+
+    // Construir los rangos efectivos, con su tope
+    const ranks = {};
+    for (const key in caps) {
+      const raw = key === changedKey ? typedValue : stored[key];
+      ranks[key] = Math.min(caps[key], toNum(raw));
+    }
+
+    const sumRanks = () =>
+      Object.values(ranks).reduce((total, v) => total + v, 0);
+
+    let excess = sumRanks() - roleRank;
+
+    // Si se pasa del rango, primero recortar la habilidad editada
+    if (excess > 0 && isRankField) {
+      const cut = Math.min(excess, ranks[changedKey]);
+      ranks[changedKey] -= cut;
+      excess -= cut;
+    }
+
+    // Si aún sobra (valores viejos o rango bajado), recortar desde abajo
+    for (const key of Object.keys(caps).reverse()) {
+      if (excess <= 0) break;
+      const cut = Math.min(excess, ranks[key]);
+      ranks[key] -= cut;
+      excess -= cut;
+    }
+
+    const unallocatedRanks = roleRank - sumRanks();
+    const damageReduction = Math.min(5, Math.floor(ranks.damageDeflectionRank / 2));
+    const attackBonus = Math.min(3, Math.floor(ranks.precisionAttackRank / 2));
+
+    const updates = {
+      [`${nearestParentDataPath}.data.unallocatedRanks`]: unallocatedRanks,
+      [`${nearestParentDataPath}.data.damageReduction`]: damageReduction,
+      [`${nearestParentDataPath}.data.attackBonus`]: attackBonus,
+    };
+
+    // Solo reescribir habilidades que hubo que corregir
+    for (const key in caps) {
+      const original = key === changedKey ? typedValue : stored[key];
+      if (Number(original) !== ranks[key]) {
+        updates[`${nearestParentDataPath}.data.${key}`] = ranks[key];
+      }
+    }
+
+    api.setValues(updates);
+  }
+
+  function updateTechRanks() {
+    const nearestParentDataPath = getNearestParentDataPath(dataPath);
+    const role = api.getValue(nearestParentDataPath);
+    const roleRank = role.data?.rank || 0;
+
+    // Techs get to allocate 2 ranks in 2 differenet tech skills per role
+    // Set unallocated ranks to (role rank * 2) - all tech ranks
+    let unallocatedRanks = roleRank * 2;
+
+    const fieldExpertiseRank = role.data?.fieldExpertiseRank || 0;
+    const upgradeExpertiseRank = role.data?.upgradeExpertiseRank || 0;
+    const fabricationExpertiseRank = role.data?.fabricationExpertiseRank || 0;
+    const inventionExpertiseRank = role.data?.inventionExpertiseRank || 0;
+
+    unallocatedRanks =
+      unallocatedRanks -
+      fieldExpertiseRank -
+      upgradeExpertiseRank -
+      fabricationExpertiseRank -
+      inventionExpertiseRank;
+
+    api.setValues({
+      [`${nearestParentDataPath}.data.unallocatedRanks`]: unallocatedRanks,
+      [`${nearestParentDataPath}.data.maxFieldExpertise`]:
+        fieldExpertiseRank + unallocatedRanks,
+      [`${nearestParentDataPath}.data.maxUpgradeExpertise`]:
+        upgradeExpertiseRank + unallocatedRanks,
+      [`${nearestParentDataPath}.data.maxFabricationExpertise`]:
+        fabricationExpertiseRank + unallocatedRanks,
+      [`${nearestParentDataPath}.data.maxInventionExpertise`]:
+        inventionExpertiseRank + unallocatedRanks,
+    });
+  }
+
+  function rollTechSkill(makerSkill) {
+    const nearestParentDataPath = getNearestParentDataPath(dataPath);
+    const role = api.getValue(nearestParentDataPath);
+    const techSkill = role.data?.techSkill || "Basic Tech";
+
+    // Get bonus by skill, unless Field Expertise which adds it by the effects mod
+    let bonus = role.data?.fieldExpertiseRank || 0;
+    if (makerSkill === "Upgrade Exertise") {
+      bonus = role.data?.upgradeExpertiseRank || 0;
+    } else if (makerSkill === "Invention Expertise") {
+      bonus = role.data?.inventionExpertiseRank || 0;
+    } else if (makerSkill === "Fabrication Expertise") {
+      bonus = role.data?.fabricationExpertiseRank || 0;
+    }
+
+    // Get DV by cost category
+    let dv = role.data?.dvCheapEveryday || 9;
+    if (
+      role.data?.costCategory === "CheapEveryday" ||
+      !role.data?.costCategory
+    ) {
+      dv = role.data?.dvCheapEveryday;
+    } else if (role.data?.costCategory === "Costly") {
+      dv = role.data?.dvCostly;
+    } else if (role.data?.costCategory === "Premium") {
+      dv = role.data?.dvPremium;
+    } else if (role.data?.costCategory === "Expensive") {
+      dv = role.data?.dvExpensive;
+    } else if (role.data?.costCategory === "Very Expensive") {
+      dv = role.data?.dvVeryExpensive;
+    } else if (role.data?.costCategory === "Luxary") {
+      dv = role.data?.dvLuxary;
+    } else if (role.data?.costCategory === "Super Luxary") {
+      dv = role.data?.dvSuperLuxary;
+    }
+
+    performSkillRoll(record, techSkill, {
+      isDodge: false,
+      roleAbility: "Tech",
+      abilityName: makerSkill,
+      subRoleRank: bonus,
+      dv: dv,
+    });
+  }
+</script>
+<numberfield field="order" hidden="true"></numberfield>
+<div
+  class="rvtt-cpr-card"
+  style="
+    display: flex;
+    flex-direction: row;
+    gap: 4px;
+    width: 100%;
+    align-items: center;
+  "
+>
+  <div style="width: 35px; height: 35px; min-height: 35px; min-width: 35px">
+    <portrait width="35px" height="35px" field="portrait"></portrait>
+  </div>
+  <div style="width: 30%">
+    <label
+      class="rvtt-cpr-role-name"
+      textalign="left"
+      variant="bold"
+      size="md"
+      field="namefield"
+    ></label>
+  </div>
+  <div
+    style="
+      display: flex;
+      flex-direction: row;
+      gap: 4px;
+      margin-left: auto;
+      width: 70%;
+    "
+  >
+    <label
+      class="rvtt-cpr-ability-name"
+      textalign="left"
+      variant="bold"
+      size="md"
+      label="Ability:"
+    ></label>
+    <label
+      class="rvtt-cpr-ability-name"
+      textalign="left"
+      variant="bold"
+      size="md"
+      field="roleAbility"
+    ></label>
+  </div>
+  <label textalign="left" variant="bold" size="sm" label="Rank"></label>
+  <numberfield
+    onchange="updateRank()"
+    field="rank"
+    width="100px"
+    size="sm"
+  ></numberfield>
+  <iconbutton
+    field="moveUpBtn"
+    onclick="moveUp()"
+    variant="outline"
+    options='[{"label": "Move Up in Order", "value": "moveUp", "icon": "IconArrowBigUp"}]'
+  ></iconbutton>
+</div>
+
+<!-- Exec Panel -->
+<div style="margin-top: 4px">
+  <box field="execProperties" variant="card" size="xs" hidden="true">
+    <div style="display: flex; flex-direction: column; gap: 4px">
+      <label variant="bold" textalign="left" label="Features" size="sm"></label>
+      <list
+        listtype="active_features_list"
+        field="features"
+        variant="outline-striped"
+        getfilters="return getFiltersForActiveFeaturesList();"
+      ></list>
+      <label
+        textalign="left"
+        variant="bold"
+        size="sm"
+        label="Team Members"
+      ></label>
+      <list
+        listtype="exec_team_member_list"
+        field="teamMembers"
+        variant="outline-striped"
+        allowadd="return canAddExecTeamMember();"
+      ></list>
+    </div>
+    <div
+      style="
+        display: flex;
+        flex-direction: row;
+        gap: 4px;
+        width: 100%;
+        margin-top: 4px;
+      "
+    >
+      <div style="width: 100%">
+        <label label="Gaining Loyalty" size="sm" variant="bold"></label>
+        <div style="display: flex; flex-direction: row; gap: 4px">
+          <div style="width: 64px">
+            <label label="Amount" size="xs" variant="bold"></label>
+          </div>
+          <div>
+            <label label="Description" size="xs" variant="bold"></label>
+          </div>
+        </div>
+        <list
+          variant="striped"
+          field="loyaltyLosses"
+          listtype="exec_loyalty_changes"
+        ></list>
+      </div>
+      <div style="width: 100%">
+        <label label="Losing Loyalty" size="sm" variant="bold"></label>
+        <div style="display: flex; flex-direction: row; gap: 4px">
+          <div style="width: 64px">
+            <label label="Amount" size="xs" variant="bold"></label>
+          </div>
+          <div>
+            <label label="Description" size="xs" variant="bold"></label>
+          </div>
+        </div>
+        <list
+          variant="striped"
+          field="loyaltyGains"
+          listtype="exec_loyalty_changes"
+        ></list>
+      </div>
+    </div>
+  </box>
+
+  <!-- Fixer Panel -->
+  <box field="fixerProperties" variant="card" size="xs" hidden="true">
+    <div style="display: flex; flex-direction: column; gap: 4px">
+      <label
+        variant="bold"
+        textalign="left"
+        label="Contacts & Clients"
+        size="sm"
+      ></label>
+      <list
+        listtype="active_features_list"
+        field="contacts"
+        variant="outline-striped"
+        getfilters="return getFiltersForActiveFeaturesList();"
+      ></list>
+      <label variant="bold" textalign="left" label="Reach" size="sm"></label>
+      <list
+        listtype="active_features_list"
+        field="reach"
+        variant="outline-striped"
+        getfilters="return getFiltersForActiveFeaturesList();"
+      ></list>
+      <div
+        style="
+          display: flex;
+          flex-direction: row;
+          gap: 8px;
+          align-items: center;
+        "
+      >
+        <label variant="bold" textalign="left" label="Haggle" size="sm"></label>
+        <button
+          variant="outline"
+          onclick="rollHaggle()"
+          icon="D10"
+          field="rollHaggleBtn"
+          label="Roll Haggle"
+          size="xs"
+        ></button>
+      </div>
+      <list
+        listtype="active_features_list"
+        field="haggle"
+        variant="outline-striped"
+        getfilters="return getFiltersForActiveFeaturesList();"
+      ></list>
+      <label variant="bold" textalign="left" label="Grease" size="sm"></label>
+      <list
+        listtype="active_features_list"
+        field="grease"
+        variant="outline-striped"
+        getfilters="return getFiltersForActiveFeaturesList();"
+      ></list>
+    </div>
+  </box>
+
+  <!-- Lawman Panel -->
+  <box field="lawmanProperties" variant="card" size="xs" hidden="true">
+    <div style="display: flex; flex-direction: column; gap: 4px">
+      <label
+        variant="bold"
+        textalign="left"
+        label="Potential Backup"
+        size="sm"
+      ></label>
+      <list
+        listtype="lawman_backup_select"
+        field="backup"
+        variant="outline-striped"
+        getfilters="return getFiltersForActiveFeaturesList();"
+      ></list>
+    </div>
+  </box>
+
+  <!-- Media Panel -->
+  <box field="mediaProperties" variant="card" size="xs" hidden="true">
+    <div style="display: flex; flex-direction: column; gap: 4px">
+      <div style="display: flex; flex-direction: row; gap: 8px">
+        <label variant="bold" textalign="left" label="Rumors" size="sm"></label>
+        <button
+          variant="outline"
+          onclick="rollRumors('passive')"
+          size="xs"
+          field="rollRumorsBtn"
+          label="Passive"
+        ></button>
+        <button
+          variant="outline"
+          onclick="rollRumors('active')"
+          field="rollRumorsBtn"
+          label="Active"
+          size="xs"
+        ></button>
+        <div
+          style="
+            display: flex;
+            flex-direction: row;
+            gap: 8px;
+            align-items: center;
+          "
+        >
+          <label
+            variant="bold"
+            textalign="left"
+            label="Relevant Skill"
+            size="xs"
+          ></label>
+          <stringfield
+            field="activeSkill"
+            defaultvalue="Library Search"
+            size="xs"
+            width="100px"
+            placeholder="Skill..."
+          ></stringfield>
+        </div>
+      </div>
+      <div style="display: flex; flex-direction: row; gap: 4px; width: 100%">
+        <div style="width: 120px">
+          <label label="Rumor" size="xs" variant="bold"></label>
+        </div>
+        <div style="width: 100%">
+          <label label="Description" size="xs" variant="bold"></label>
+        </div>
+        <div style="width: 120px">
+          <label label="Passive DV" size="xs" variant="bold"></label>
+        </div>
+        <div style="width: 120px">
+          <label label="Active DV" size="xs" variant="bold"></label>
+        </div>
+      </div>
+      <list
+        listtype="media_rumor_panel_list"
+        field="rumors"
+        variant="outline-striped"
+      ></list>
+    </div>
+    <label
+      variant="bold"
+      textalign="left"
+      label="Publishing Stories or Scoops"
+      size="sm"
+    ></label>
+    <div
+      style="display: flex; flex-direction: row; gap: 8px; align-items: center"
+    >
+      <label
+        variant="bold"
+        textalign="left"
+        label="Believability"
+        size="sm"
+      ></label>
+      <iconbutton
+        variant="outline"
+        onclick="rollBelievability()"
+        field="rollBelievabilityBtn"
+        options='[{"icon": "D10", "label": "Roll Believability", "value": "rollBelievability"}]'
+        size="sm"
+      ></iconbutton>
+      <label
+        variant="bold"
+        textalign="left"
+        label="Evidence Bonus"
+        size="xs"
+      ></label>
+      <numberfield
+        field="evidenceBonus"
+        size="xs"
+        width="60px"
+        minvalue="0"
+        showsign="true"
+        maxvalue="10"
+        placeholder="+0"
+      ></numberfield>
+    </div>
+    <label
+      variant="bold"
+      textalign="left"
+      label="Access/Sources"
+      size="sm"
+    ></label>
+    <list
+      listtype="active_features_list"
+      field="access"
+      variant="outline-striped"
+      getfilters="return getFiltersForActiveFeaturesList();"
+    ></list>
+    <label variant="bold" textalign="left" label="Audiences" size="sm"></label>
+    <list
+      listtype="active_features_list"
+      field="audiences"
+      variant="outline-striped"
+      getfilters="return getFiltersForActiveFeaturesList();"
+    ></list>
+    <label variant="bold" textalign="left" label="Impact" size="sm"></label>
+    <list
+      listtype="active_features_list"
+      field="impact"
+      variant="outline-striped"
+      getfilters="return getFiltersForActiveFeaturesList();"
+    ></list>
+  </box>
+
+  <!-- Medtech Panel -->
+  <box field="medtechProperties" variant="card" size="xs" hidden="true">
+    <numberfield
+      field="unallocatedRanks"
+      label="Unallocated Ranks"
+      hidecontrols="true"
+      width="110px"
+      size="xs"
+      placeholder="0"
+      editable="false"
+    ></numberfield>
+    <div
+      style="
+        display: flex;
+        flex-direction: row;
+        gap: 4px;
+        align-items: flex-end;
+      "
+    >
+      <numberfield
+        field="surgery"
+        label="Surgery"
+        size="xs"
+        width="110px"
+        placeholder="0"
+        onchange="updateSurgery()"
+      ></numberfield>
+      <iconbutton
+        variant="outline"
+        onclick="rollSurgery()"
+        field="rollSurgeryBtn"
+        options='[{"icon": "D10", "label": "Roll Surgery", "value": "rollSurgery"}]'
+        size="sm"
+      ></iconbutton>
+      <numberfield
+        field="surgerySkillLevel"
+        placeholder="0"
+        label="Surgery Skill Level"
+        editable="false"
+        width="110px"
+        hidecontrols="true"
+        size="xs"
+      ></numberfield>
+    </div>
+    <div
+      style="
+        display: flex;
+        flex-direction: row;
+        gap: 4px;
+        align-items: flex-end;
+      "
+    >
+      <numberfield
+        field="medicalTech"
+        label="Medical Tech"
+        size="xs"
+        width="110px"
+        placeholder="0"
+        hidecontrols="true"
+        editable="false"
+      ></numberfield>
+      <iconbutton
+        variant="outline"
+        onclick="rollMedicalTech()"
+        field="rollMedicalTechBtn"
+        options='[{"icon": "D10", "label": "Roll Medical Tech", "value": "rollMedicalTech"}]'
+        size="sm"
+      ></iconbutton>
+    </div>
+    <div
+      style="
+        display: flex;
+        flex-direction: row;
+        gap: 4px;
+        align-items: flex-start;
+      "
+    >
+      <iconbutton
+        variant="outline"
+        field="medtechIcon"
+        color="default"
+        options='[{"icon": "IconCornerDownRight", "label": "Medical Tech Sub-ability", "value": "medtechSubAbility"}]'
+      ></iconbutton>
+      <div style="display: flex; flex-direction: column; gap: 4px; width: 100%">
+        <div
+          style="
+            display: flex;
+            flex-direction: row;
+            gap: 4px;
+            align-items: flex-end;
+          "
+        >
+          <numberfield
+            field="pharmaceuticals"
+            label="Pharmaceuticals"
+            size="xs"
+            width="110px"
+            placeholder="0"
+            onchange="updatePharmaceuticals()"
+          ></numberfield>
+          <iconbutton
+            variant="outline"
+            onclick="rollSynthesize()"
+            field="rollSynthesizeBtn"
+            options='[{"icon": "D10", "label": "Roll Synthesize", "value": "rollSynthesize"}]'
+            size="sm"
+          ></iconbutton>
+        </div>
+        <div
+          style="display: flex; flex-direction: column; gap: 4px; width: 100%"
+        >
+          <label
+            field="pharmaceuticalsLabel"
+            label="Chosen Pharmaceuticals"
+            size="xs"
+            variant="bold"
+            textalign="left"
+          ></label>
+          <list
+            listtype="items_pharmaceuticals_list"
+            field="chosenPharmaceuticals"
+            variant="outline"
+            allowadd="return isPharmaceutical(value);"
+          ></list>
+        </div>
+      </div>
+    </div>
+    <div
+      style="
+        display: flex;
+        flex-direction: row;
+        gap: 4px;
+        align-items: flex-start;
+      "
+    >
+      <iconbutton
+        variant="outline"
+        field="medtechIcon"
+        color="default"
+        options='[{"icon": "IconCornerDownRight", "label": "Medical Tech Sub-ability", "value": "medtechSubAbility"}]'
+      ></iconbutton>
+      <div style="display: flex; flex-direction: column; gap: 4px; width: 100%">
+        <div
+          style="
+            display: flex;
+            flex-direction: row;
+            gap: 4px;
+            align-items: flex-end;
+          "
+        >
+          <numberfield
+            field="cryosystemOperation"
+            label="Cryosystem Operation"
+            size="xs"
+            width="110px"
+            placeholder="0"
+            onchange="updateCryosystemOperation()"
+          ></numberfield>
+        </div>
+        <div
+          style="display: flex; flex-direction: column; gap: 4px; width: 100%"
+        >
+          <label
+            field="cryosystemFeaturesLabel"
+            label="Cryosystem Operation Features"
+            size="xs"
+            variant="bold"
+            textalign="left"
+          ></label>
+          <list
+            listtype="active_features_list"
+            field="cryosystemFeatures"
+            variant="outline-striped"
+            getfilters="return getFiltersForCryosystemFeaturesList();"
+          ></list>
+        </div>
+      </div>
+    </div>
+  </box>
+
+  <!-- Netrunner Panel -->
+  <box field="netrunnerProperties" variant="card" size="xs" hidden="true">
+    <div
+      style="display: flex; flex-direction: row; gap: 8px; align-items: center"
+    >
+      <label
+        variant="bold"
+        textalign="left"
+        label="NET Actions"
+        size="xs"
+      ></label>
+      <numberfield
+        field="netActions"
+        size="xs"
+        width="40px"
+        editable="false"
+        hidecontrols="true"
+        textalign="center"
+        placeholder="0"
+      ></numberfield>
+    </div>
+    <div style="margin-top: 4px">
+      <label
+        variant="bold"
+        textalign="left"
+        label="Interface Abilities"
+        size="xs"
+      ></label>
+    </div>
+    <div
+      style="
+        display: flex;
+        flex-direction: row;
+        gap: 8px;
+        align-items: center;
+        margin-top: 4px;
+      "
+    >
+      <button
+        variant="outline"
+        field="rollInterfaceBtn"
+        label="General"
+        icon="D10"
+        onclick="rollInterface('Interface')"
+        size="xs"
+      ></button>
+      <!--
+<button
+        variant="outline"
+        field="rollInterfaceBtn"
+        label="Encounter ICE"
+        icon="D10"
+        onclick="rollInterface('Encounter ICE')"
+        size="xs"
+      ></button>
+-->      
+         
+    </div>
+    <div
+      style="
+        display: flex;
+        flex-direction: row;
+        gap: 8px;
+        align-items: center;
+        margin-top: 4px;
+        flex-wrap: wrap;
+      "
+    >
+
+      
+      <button
+        variant="outline"
+        field="rollScannerBtn"
+        color="secondary"
+        label="Destroy"
+        icon="D10"
+        onclick="rollInterface('Destroy')"
+        size="xs"
+      ></button>
+
+
+      <button
+        variant="outline"
+        field="rollBackdoorBtn"
+        color="secondary"
+        label="Backdoor"
+        icon="D10"
+        onclick="rollInterface('Backdoor')"
+        size="xs"
+      ></button>
+      <!--
+...<button
+        variant="outline"
+        color="secondary"
+        field="rollCloakBtn"
+        label="Cloak"
+        icon="D10"
+        onclick="rollInterface('Cloak')"
+        size="xs"
+      ></button>
+-->
+         <!--
+-->
+      
+      <button
+        variant="outline"
+        field="rollControlBtn"
+        color="secondary"
+        label="Control"
+        icon="D10"
+        onclick="rollInterface('Control')"
+        size="xs"
+      ></button>   
+      <button
+        variant="outline"
+        field="rollEyeDeeBtn"
+        color="secondary"
+        label="Eye-Dee"
+        icon="D10"
+        onclick="rollInterface('Eye-Dee')"
+        size="xs"
+      ></button>
+
+         <!--    
+      <button
+        variant="outline"
+        field="rollPathfinderBtn"
+        color="secondary"
+        label="Pathfinder"
+        icon="D10"
+        onclick="rollInterface('Pathfinder')"
+        size="xs"
+      ></button>
+-->
+      
+      
+  
+      <button
+        variant="outline"
+        field="rollSlideBtn"
+        color="secondary"
+        label="Slide"
+        icon="D10"
+        onclick="rollInterface('Slide')"
+        size="xs"
+      ></button>    
+      <button
+        variant="outline"
+        field="rollVirusBtn"
+        color="secondary"
+        label="Virus"
+        icon="D10"
+        onclick="rollInterface('Virus')"
+        size="xs"
+      ></button>
+    </div>
+    <div
+      style="
+        margin-top: 4px;
+        display: flex;
+        flex-direction: row;
+        gap: 8px;
+        align-items: center;
+      "
+    >
+      <button
+        variant="outline"
+        field="rollZapBtn"
+        color="secondary"
+        label="Zap"
+        icon="D10"
+        onclick="rollInterface('Zap')"
+        size="xs"
+      ></button>
+      <label
+        variant="bold"
+        textalign="left"
+        label="ZAP Damage"
+        size="xs"
+      ></label>
+      <stringfield
+        field="zapDamage"
+        size="xs"
+        width="60px"
+        placeholder="1d6"
+        defaultvalue="1d6"
+      ></stringfield>
+      <button
+        variant="light"
+        field="rollZapDamageBtn"
+        label="Damage"
+        onclick="rollZapDamage()"
+        size="xs"
+      ></button>
+    </div>
+  </box>
+
+  <!-- Nomad Panel -->
+  <box field="nomadProperties" variant="card" size="xs" hidden="true">
+    <div style="display: flex; flex-direction: column; gap: 4px">
+      <label
+        variant="bold"
+        textalign="left"
+        label="Vehicle Familiarity"
+        size="sm"
+      ></label>
+      <div
+        style="display: flex; flex-direction: row; gap: 4px; flex-wrap: wrap"
+      >
+        <button
+          variant="outline"
+          field="rollDriveLandVehicleBtn"
+          label="Drive Land Vehicle"
+          icon="D10"
+          size="xs"
+          onclick="rollVehicleFamiliarity('Drive Land Vehicle')"
+        ></button>
+        <button
+          variant="outline"
+          field="rollPilotAirVehicleBtn"
+          label="Pilot Air Vehicle"
+          icon="D10"
+          size="xs"
+          onclick="rollVehicleFamiliarity('Pilot Air Vehicle (x2)')"
+        ></button>
+        <button
+          variant="outline"
+          field="rollPilotSeaVehicleBtn"
+          label="Pilot Sea Vehicle"
+          icon="D10"
+          size="xs"
+          onclick="rollVehicleFamiliarity('Pilot Sea Vehicle')"
+        ></button>
+        <button
+          variant="outline"
+          field="rollLandVehicleTechBtn"
+          label="Land Vehicle Tech"
+          icon="D10"
+          size="xs"
+          onclick="rollVehicleFamiliarity('Land Vehicle Tech')"
+        ></button>
+        <button
+          variant="outline"
+          field="rollAirVehicleTechBtn"
+          label="Air Vehicle Tech"
+          icon="D10"
+          size="xs"
+          onclick="rollVehicleFamiliarity('Air Vehicle Tech')"
+        ></button>
+        <button
+          variant="outline"
+          field="rollSeaVehicleTechBtn"
+          label="Sea Vehicle Tech"
+          icon="D10"
+          size="xs"
+          onclick="rollVehicleFamiliarity('Sea Vehicle Tech')"
+        ></button>
+      </div>
+      <label
+        variant="bold"
+        textalign="left"
+        label="Family Motorpool"
+        size="sm"
+      ></label>
+      <list
+        listtype="nomad_vehicle_list"
+        field="vehicles"
+        allowadd="return isVehicle(value);"
+        variant="outline-striped"
+      ></list>
+    </div>
+  </box>
+
+  <!-- Rockerboy Panel -->
+  <box field="rockerboyProperties" variant="card" size="xs" hidden="true">
+    <div style="display: flex; flex-direction: column; gap: 4px">
+      <label
+        variant="bold"
+        textalign="left"
+        label="Roll Ability by Group Size"
+        size="sm"
+      ></label>
+      <div style="display: flex; flex-direction: row; gap: 8px">
+        <button
+          variant="outline"
+          field="rollSingleGroupBtn"
+          label="Single"
+          icon="D10"
+          size="xs"
+          onclick="rollCharismaticImpact('single')"
+        ></button>
+        <button
+          variant="outline"
+          field="rollSmallGroupBtn"
+          label="Small Group"
+          icon="D10"
+          size="xs"
+          onclick="rollCharismaticImpact('small')"
+        ></button>
+        <button
+          variant="outline"
+          field="rollHugeGroupBtn"
+          label="Huge Group"
+          icon="D10"
+          size="xs"
+          onclick="rollCharismaticImpact('huge')"
+        ></button>
+      </div>
+      <label
+        variant="bold"
+        textalign="left"
+        label="Venues You Can Play"
+        size="sm"
+      ></label>
+      <list
+        listtype="active_features_list"
+        field="venues"
+        variant="outline-striped"
+        getfilters="return getFiltersForActiveFeaturesList();"
+      ></list>
+      <label
+        variant="bold"
+        textalign="left"
+        label="Impact on a Single Fan"
+        size="sm"
+      ></label>
+      <list
+        listtype="active_features_list"
+        field="impactSingleFan"
+        variant="outline-striped"
+        getfilters="return getFiltersForActiveFeaturesList();"
+      ></list>
+      <label
+        variant="bold"
+        textalign="left"
+        label="Impact on a Group of Fans"
+        size="sm"
+      ></label>
+      <list
+        listtype="active_features_list"
+        field="impactSmallGroup"
+        variant="outline-striped"
+        getfilters="return getFiltersForActiveFeaturesList();"
+      ></list>
+      <label
+        variant="bold"
+        textalign="left"
+        label="Impact on a Huge Group of Fans"
+        size="sm"
+      ></label>
+      <list
+        listtype="active_features_list"
+        field="impactHugeGroup"
+        variant="outline-striped"
+        getfilters="return getFiltersForActiveFeaturesList();"
+      ></list>
+    </div>
+  </box>
+
+  <!-- Solo Panel  CAAAAMBIADO-->
+  <box field="soloProperties" variant="card" size="xs" hidden="true">
+    <div style="display: flex; flex-direction: column; gap: 4px">
+      <numberfield
+        field="unallocatedRanks"
+        label="Unallocated Ranks"
+        size="xs"
+        width="110px"
+        placeholder="0"
+        editable="false"
+        hidecontrols="true"
+      ></numberfield>
+
+      <!-- Damage Deflection -->
+      <div
+        style="
+          display: flex;
+          flex-direction: row;
+          gap: 8px;
+          align-items: center;
+        "
+      >
+        <label
+          variant="bold"
+          textalign="left"
+          label="Damage Deflection"
+          size="sm"
+        ></label>
+        <numberfield
+          field="damageDeflectionRank"
+          size="xs"
+          width="110px"
+          minvalue="0"
+          onchange="updateSoloRanks()"
+          hidecontrols="true"
+        ></numberfield>
+      </div>
+      <div
+        style="
+          display: flex;
+          flex-direction: row;
+          gap: 8px;
+          align-items: center;
+        "
+      >
+        <label
+          variant="bold"
+          textalign="left"
+          label="Damage Reduction"
+          size="xs"
+        ></label>
+        <numberfield
+          field="damageReduction"
+          size="xs"
+          width="60px"
+          hidecontrols="true"
+          editable="false"
+          placeholder="0"
+        ></numberfield>
+        <label
+          variant="bold"
+          textalign="left"
+          label="Used this Round"
+          size="xs"
+        ></label>
+        <checkbox
+          field="usedDamageReduction"
+          size="xs"
+          editable="true"
+        ></checkbox>
+      </div>
+      <accordion
+        field="damageDeflectionAccordion"
+        label="Description"
+        size="xs"
+        variant="contained"
+      >
+        <richtextfield
+          field="damageDeflection"
+          disablecontrols="true"
+        ></richtextfield>
+      </accordion>
+
+      <!-- Fumble Recovery -->
+      <div
+        style="
+          display: flex;
+          flex-direction: row;
+          gap: 8px;
+          align-items: center;
+          margin-top: 4px;
+        "
+      >
+        <label
+          variant="bold"
+          textalign="left"
+          label="Fumble Recovery"
+          size="sm"
+        ></label>
+        <numberfield
+          field="fumbleRecoveryRank"
+          size="xs"
+          width="110px"
+          minvalue="0"
+          onchange="updateSoloRanks()"
+          hidecontrols="true"
+        ></numberfield>
+      </div>
+      <accordion
+        field="fumbleRecoveryAccordion"
+        label="Description"
+        size="xs"
+        variant="contained"
+      >
+        <richtextfield
+          field="fumbleRecovery"
+          disablecontrols="true"
+        ></richtextfield>
+      </accordion>
+
+      <!-- Initiative Reaction -->
+      <div
+        style="
+          display: flex;
+          flex-direction: row;
+          gap: 8px;
+          align-items: center;
+          margin-top: 4px;
+        "
+      >
+        <label
+          variant="bold"
+          textalign="left"
+          label="Initiative Reaction"
+          size="sm"
+        ></label>
+        <numberfield
+          field="initiativeReactionRank"
+          size="xs"
+          width="110px"
+          minvalue="0"
+          onchange="updateSoloRanks()"
+          hidecontrols="true"
+        ></numberfield>
+      </div>
+      <accordion
+        field="initiativeReactionAccordion"
+        label="Description"
+        size="xs"
+        variant="contained"
+      >
+        <richtextfield
+          field="initiativeReaction"
+          disablecontrols="true"
+        ></richtextfield>
+      </accordion>
+
+      <!-- Precision Attack -->
+      <div
+        style="
+          display: flex;
+          flex-direction: row;
+          gap: 8px;
+          align-items: center;
+        "
+      >
+        <label
+          variant="bold"
+          textalign="left"
+          label="Precision Attack"
+          size="sm"
+        ></label>
+        <numberfield
+          field="precisionAttackRank"
+          size="xs"
+          width="110px"
+          minvalue="0"
+          onchange="updateSoloRanks()"
+          hidecontrols="true"
+        ></numberfield>
+      </div>
+      <div
+        style="
+          display: flex;
+          flex-direction: row;
+          gap: 8px;
+          align-items: center;
+        "
+      >
+        <label
+          variant="bold"
+          textalign="left"
+          label="Attack Bonus"
+          size="xs"
+        ></label>
+        <numberfield
+          field="attackBonus"
+          size="xs"
+          width="60px"
+          hidecontrols="true"
+          editable="false"
+          placeholder="0"
+        ></numberfield>
+      </div>
+      <accordion
+        field="precisionAttackAccordion"
+        label="Description"
+        size="xs"
+        variant="contained"
+      >
+        <richtextfield
+          field="precisionAttack"
+          disablecontrols="true"
+        ></richtextfield>
+      </accordion>
+
+      <!-- Spot Weakness -->
+      <div
+        style="
+          display: flex;
+          flex-direction: row;
+          gap: 8px;
+          align-items: center;
+        "
+      >
+        <label
+          variant="bold"
+          textalign="left"
+          label="Spot Weakness"
+          size="sm"
+        ></label>
+        <numberfield
+          field="spotWeaknessRank"
+          size="xs"
+          width="110px"
+          minvalue="0"
+          onchange="updateSoloRanks()"
+          hidecontrols="true"
+        ></numberfield>
+      </div>
+      <accordion
+        field="spotWeaknessAccordion"
+        label="Description"
+        size="xs"
+        variant="contained"
+      >
+        <richtextfield
+          field="spotWeakness"
+          disablecontrols="true"
+        ></richtextfield>
+      </accordion>
+
+      <!-- Threat Detection -->
+      <div
+        style="
+          display: flex;
+          flex-direction: row;
+          gap: 8px;
+          align-items: center;
+        "
+      >
+        <label
+          variant="bold"
+          textalign="left"
+          label="Threat Detection"
+          size="sm"
+        ></label>
+        <numberfield
+          field="threatDetectionRank"
+          size="xs"
+          width="110px"
+          minvalue="0"
+          onchange="updateSoloRanks()"
+          hidecontrols="true"
+        ></numberfield>
+      </div>
+      <accordion
+        field="threatDetectionAccordion"
+        label="Description"
+        size="xs"
+        variant="contained"
+      >
+        <richtextfield
+          field="threatDetection"
+          disablecontrols="true"
+        ></richtextfield>
+      </accordion>
+    </div>
+  </box>
+  
+  <!-- Tech Panel -->
+  <box field="techProperties" variant="card" size="xs" hidden="true">
+    <div
+      style="
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        margin-bottom: 8px;
+      "
+    >
+      <numberfield
+        field="unallocatedRanks"
+        label="Unallocated Ranks"
+        size="xs"
+        width="110px"
+        placeholder="0"
+        editable="false"
+        hidecontrols="true"
+      ></numberfield>
+      <label
+        variant="bold"
+        textalign="left"
+        label="Skill for Repair, Upgrade, Fabrication or Invention"
+        size="sm"
+      ></label>
+      <div
+        style="
+          display: flex;
+          flex-direction: row;
+          gap: 8px;
+          align-items: center;
+        "
+      >
+        <dropdown
+          field="techSkill"
+          size="xs"
+          defaultvalue="Basic Tech"
+          width="180px"
+          label="Skill"
+          disablediflocked="false"
+          options='[{"label": "Basic Tech","value": "Basic Tech"}, {"label": "Cybertech","value": "Cybertech"}, {"label": "Electronics/Security Tech","value": "Electronics/Security Tech (x2)"}, {"label": "Weaponstech","value": "Weaponstech"}, {"label": "Land Vehicle Tech","value": "Land Vehicle Tech"}, {"label": "Sea Vehicle Tech","value": "Sea Vehicle Tech"}, {"label": "Air Vehicle Tech","value": "Air Vehicle Tech"}]'
+        ></dropdown>
+        <dropdown
+          field="costCategory"
+          size="xs"
+          defaultvalue="CheapEveryday"
+          width="180px"
+          label="Cost Category"
+          disablediflocked="false"
+          options='[{"label": "Cheap/Everyday","value": "CheapEveryday"}, {"label": "Costly","value": "Costly"}, {"label": "Premium","value": "Premium"}, {"label": "Expensive","value": "Expensive"}, {"label": "Very Expensive","value": "Very Expensive"}, {"label": "Luxary","value": "Luxary"}, {"label": "Super Luxary","value": "Super Luxary"}]'
+        ></dropdown>
+      </div>
+      <div
+        style="
+          display: flex;
+          flex-direction: row;
+          gap: 8px;
+          align-items: center;
+        "
+      >
+        <label
+          variant="bold"
+          textalign="left"
+          label="Field Expertise"
+          size="sm"
+        ></label>
+        <numberfield
+          field="fieldExpertiseRank"
+          size="xs"
+          width="60px"
+          placeholder="0"
+          maxvaluefield="maxFieldExpertise"
+          onchange="updateTechRanks()"
+        ></numberfield>
+        <button
+          field="techSkillButton"
+          size="xs"
+          label="Roll Repair"
+          variant="outline"
+          icon="D10"
+          onclick="rollTechSkill('Field Expertise')"
+        ></button>
+      </div>
+      <accordion
+        field="fieldExpertiseAccordion"
+        label="Description"
+        size="xs"
+        variant="contained"
+      >
+        <richtextfield
+          field="fieldExpertise"
+          disablecontrols="true"
+        ></richtextfield>
+      </accordion>
+      <div
+        style="
+          display: flex;
+          flex-direction: row;
+          gap: 8px;
+          align-items: center;
+        "
+      >
+        <label
+          variant="bold"
+          textalign="left"
+          label="Upgrade Expertise"
+          size="sm"
+        ></label>
+        <numberfield
+          field="upgradeExpertiseRank"
+          size="xs"
+          width="60px"
+          placeholder="0"
+          maxvaluefield="maxUpgradeExpertise"
+          onchange="updateTechRanks()"
+        ></numberfield>
+        <button
+          field="techSkillButton"
+          size="xs"
+          label="Roll Upgrade"
+          variant="outline"
+          icon="D10"
+          onclick="rollTechSkill('Upgrade Expertise')"
+        ></button>
+      </div>
+      <accordion
+        field="upgradeExpertiseAccordion"
+        label="Description"
+        size="xs"
+        variant="contained"
+      >
+        <richtextfield
+          field="upgradeExpertise"
+          disablecontrols="true"
+        ></richtextfield>
+      </accordion>
+      <div
+        style="
+          display: flex;
+          flex-direction: row;
+          gap: 8px;
+          align-items: center;
+        "
+      >
+        <label
+          variant="bold"
+          textalign="left"
+          label="Fabrication Expertise"
+          size="sm"
+        ></label>
+        <numberfield
+          field="fabricationExpertiseRank"
+          size="xs"
+          width="60px"
+          placeholder="0"
+          maxvaluefield="maxFabricationExpertise"
+          onchange="updateTechRanks()"
+        ></numberfield>
+        <button
+          field="techSkillButton"
+          size="xs"
+          label="Roll Fabrication"
+          variant="outline"
+          icon="D10"
+          onclick="rollTechSkill('Fabrication Expertise')"
+        ></button>
+      </div>
+      <accordion
+        field="fabricationExpertiseAccordion"
+        label="Description"
+        size="xs"
+        variant="contained"
+      >
+        <richtextfield
+          field="fabricationExpertise"
+          disablecontrols="true"
+        ></richtextfield>
+      </accordion>
+      <div
+        style="
+          display: flex;
+          flex-direction: row;
+          gap: 8px;
+          align-items: center;
+        "
+      >
+        <label
+          variant="bold"
+          textalign="left"
+          label="Invention Expertise"
+          size="sm"
+        ></label>
+        <numberfield
+          field="inventionExpertiseRank"
+          size="xs"
+          width="60px"
+          placeholder="0"
+          maxvaluefield="maxInventionExpertise"
+          onchange="updateTechRanks()"
+        ></numberfield>
+        <button
+          field="techSkillButton"
+          size="xs"
+          label="Roll Invention"
+          variant="outline"
+          icon="D10"
+          onclick="rollTechSkill('Invention Expertise')"
+        ></button>
+      </div>
+      <accordion
+        field="inventionExpertiseAccordion"
+        label="Description"
+        size="xs"
+        variant="contained"
+      >
+        <richtextfield
+          field="inventionExpertise"
+          disablecontrols="true"
+        ></richtextfield>
+      </accordion>
+    </div>
+    <divider field="techDVDivider" size="xs"></divider>
+    <div style="margin-bottom: 8px"></div>
+    <accordion
+      field="techDVAccordion"
+      label="Repair / Upgrade / Fabrication / Invention DVs"
+      size="xs"
+      variant="contained"
+    >
+      <table style="width: 100%">
+        <thead>
+          <tr>
+            <th style="text-align: left; font-size: 14px">Category</th>
+            <th style="font-size: 14px">DV</th>
+            <th style="font-size: 14px">Time</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td style="text-align: left; font-size: 14px">Cheap/Everyday</td>
+            <td>
+              <numberfield
+                field="dvCheapEveryday"
+                minvalue="0"
+                placeholder="Enter dv..."
+                size="xs"
+              ></numberfield>
+            </td>
+            <td>
+              <stringfield
+                field="timeCheapEveryday"
+                placeholder="Enter time..."
+                size="xs"
+                multiline="true"
+              ></stringfield>
+            </td>
+          </tr>
+          <tr>
+            <td style="text-align: left; font-size: 14px">Costly</td>
+            <td>
+              <numberfield
+                field="dvCostly"
+                minvalue="0"
+                placeholder="Enter dv..."
+                size="xs"
+              ></numberfield>
+            </td>
+            <td>
+              <stringfield
+                field="timeCostly"
+                placeholder="Enter time..."
+                size="xs"
+                multiline="true"
+              ></stringfield>
+            </td>
+          </tr>
+          <tr>
+            <td style="text-align: left; font-size: 14px">Premium</td>
+            <td>
+              <numberfield
+                field="dvPremium"
+                minvalue="0"
+                placeholder="Enter dv..."
+                size="xs"
+              ></numberfield>
+            </td>
+            <td>
+              <stringfield
+                field="timePremium"
+                placeholder="Enter time..."
+                size="xs"
+                multiline="true"
+              ></stringfield>
+            </td>
+          </tr>
+          <tr>
+            <td style="text-align: left; font-size: 14px">Expensive</td>
+            <td>
+              <numberfield
+                field="dvExpensive"
+                minvalue="0"
+                placeholder="Enter dv..."
+                size="xs"
+              ></numberfield>
+            </td>
+            <td>
+              <stringfield
+                field="timeExpensive"
+                placeholder="Enter time..."
+                size="xs"
+                multiline="true"
+              ></stringfield>
+            </td>
+          </tr>
+          <tr>
+            <td style="text-align: left; font-size: 14px">Very Expensive</td>
+            <td>
+              <numberfield
+                field="dvVeryExpensive"
+                minvalue="0"
+                placeholder="Enter dv..."
+                size="xs"
+              ></numberfield>
+            </td>
+            <td>
+              <stringfield
+                field="timeVeryExpensive"
+                placeholder="Enter time..."
+                size="xs"
+                multiline="true"
+              ></stringfield>
+            </td>
+          </tr>
+          <tr>
+            <td style="text-align: left; font-size: 14px">Luxary</td>
+            <td>
+              <numberfield
+                field="dvLuxary"
+                minvalue="0"
+                placeholder="Enter dv..."
+                size="xs"
+              ></numberfield>
+            </td>
+            <td>
+              <stringfield
+                field="timeLuxary"
+                placeholder="Enter time..."
+                size="xs"
+                multiline="true"
+              ></stringfield>
+            </td>
+          </tr>
+          <tr>
+            <td style="text-align: left; font-size: 14px">Super Luxary</td>
+            <td>
+              <numberfield
+                field="dvSuperLuxary"
+                minvalue="0"
+                placeholder="Enter dv..."
+                size="xs"
+              ></numberfield>
+            </td>
+            <td>
+              <stringfield
+                field="timeSuperLuxary"
+                placeholder="Enter time..."
+                size="xs"
+                multiline="true"
+              ></stringfield>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </accordion>
+  </box>
+
+  <!-- Custom Panel -->
+  <box field="customProperties" variant="card" size="xs" hidden="true">
+    <div style="display: flex; flex-direction: column; gap: 4px">
+      <label variant="bold" textalign="left" label="Features" size="sm"></label>
+      <list
+        listtype="active_features_list"
+        field="features"
+        variant="outline-striped"
+        getfilters="return getFiltersForActiveFeaturesList();"
+      ></list>
+    </div>
+  </box>
+</div>
+
+<numberfield field="order" hidden="true"></numberfield>

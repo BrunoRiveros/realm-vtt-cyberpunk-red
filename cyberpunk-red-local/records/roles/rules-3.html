@@ -1,0 +1,941 @@
+<!-- Exec Properties -->
+
+<box field="execProperties" hidden="true">
+  <label
+    label="Exec Properties"
+    size="md"
+    variant="bold"
+    textalign="center"
+  ></label>
+  <label label="Features" size="sm" variant="bold"></label>
+  <div style="display: flex; flex-direction: row; gap: 4px">
+    <div style="width: 64px">
+      <label label="Rank" size="xs" variant="bold"></label>
+    </div>
+    <div>
+      <label label="Feature" size="xs" variant="bold"></label>
+    </div>
+  </div>
+  <list variant="striped" field="features" listtype="basic_features"></list>
+  <div
+    style="
+      display: flex;
+      flex-direction: row;
+      gap: 4px;
+      width: 100%;
+      margin-top: 4px;
+    "
+  >
+    <div style="width: 100%">
+      <label label="Gaining Loyalty" size="sm" variant="bold"></label>
+      <div style="display: flex; flex-direction: row; gap: 4px">
+        <div style="width: 64px">
+          <label label="Amount" size="xs" variant="bold"></label>
+        </div>
+        <div>
+          <label label="Description" size="xs" variant="bold"></label>
+        </div>
+      </div>
+      <list
+        variant="striped"
+        field="loyaltyLosses"
+        listtype="exec_loyalty_changes"
+      ></list>
+    </div>
+    <div style="width: 100%">
+      <label label="Losing Loyalty" size="sm" variant="bold"></label>
+      <div style="display: flex; flex-direction: row; gap: 4px">
+        <div style="width: 64px">
+          <label label="Amount" size="xs" variant="bold"></label>
+        </div>
+        <div>
+          <label label="Description" size="xs" variant="bold"></label>
+        </div>
+      </div>
+      <list
+        variant="striped"
+        field="loyaltyGains"
+        listtype="exec_loyalty_changes"
+      ></list>
+    </div>
+  </div>
+</box>
+
+<!-- Fixer Properties -->
+
+<box field="fixerProperties" hidden="true">
+  <label
+    label="Fixer Properties"
+    size="md"
+    variant="bold"
+    textalign="center"
+  ></label>
+  <div style="display: flex; flex-direction: column; gap: 4px; margin-top: 4px">
+    <label label="Contacts & Clients" size="sm" variant="bold"></label>
+    <div style="display: flex; flex-direction: column; width: 100%">
+      <div style="display: flex; flex-direction: row; width: 100%">
+        <div style="width: 64px">
+          <label label="Rank" size="xs" variant="bold"></label>
+        </div>
+        <div>
+          <label label="Feature" size="xs" variant="bold"></label>
+        </div>
+      </div>
+      <list variant="striped" field="contacts" listtype="basic_features"></list>
+    </div>
+  </div>
+  <div style="display: flex; flex-direction: column; gap: 4px; margin-top: 4px">
+    <label label="Reach" size="sm" variant="bold"></label>
+    <div style="display: flex; flex-direction: column; width: 100%">
+      <div style="display: flex; flex-direction: row; width: 100%">
+        <div style="width: 64px">
+          <label label="Rank" size="xs" variant="bold"></label>
+        </div>
+        <div>
+          <label label="Feature" size="xs" variant="bold"></label>
+        </div>
+      </div>
+      <list variant="striped" field="reach" listtype="basic_features"></list>
+    </div>
+  </div>
+  <div style="display: flex; flex-direction: column; gap: 4px; margin-top: 4px">
+    <label label="Haggle" size="sm" variant="bold"></label>
+    <div style="display: flex; flex-direction: column; width: 100%">
+      <div style="display: flex; flex-direction: row; width: 100%">
+        <div style="width: 64px">
+          <label label="Rank" size="xs" variant="bold"></label>
+        </div>
+        <div>
+          <label label="Feature" size="xs" variant="bold"></label>
+        </div>
+      </div>
+      <list variant="striped" field="haggle" listtype="basic_features"></list>
+    </div>
+  </div>
+  <div style="display: flex; flex-direction: column; gap: 4px; margin-top: 4px">
+    <label label="Grease" size="sm" variant="bold"></label>
+    <div style="display: flex; flex-direction: column; width: 100%">
+      <div style="display: flex; flex-direction: row; width: 100%">
+        <div style="width: 64px">
+          <label label="Rank" size="xs" variant="bold"></label>
+        </div>
+        <div>
+          <label label="Feature" size="xs" variant="bold"></label>
+        </div>
+      </div>
+      <list variant="striped" field="grease" listtype="basic_features"></list>
+    </div>
+  </div>
+</box>
+
+<!-- Lawman Properties -->
+
+<box field="lawmanProperties" hidden="true">
+  <label
+    label="Lawman Properties"
+    size="md"
+    variant="bold"
+    textalign="center"
+  ></label>
+  <div style="display: flex; flex-direction: column; gap: 4px; margin-top: 4px">
+    <label label="Backup Options by Rank" size="sm" variant="bold"></label>
+    <div style="display: flex; flex-direction: column; width: 100%">
+      <div style="display: flex; flex-direction: row; width: 100%">
+        <div style="width: 64px">
+          <label label="Rank" size="xs" variant="bold"></label>
+        </div>
+        <div>
+          <label label="Backup" size="xs" variant="bold"></label>
+        </div>
+      </div>
+      <list variant="striped" field="backup" listtype="lawman_features"></list>
+    </div>
+  </div>
+</box>
+
+<!-- Media Properties -->
+
+<box field="mediaProperties" hidden="true">
+  <label
+    label="Media Properties"
+    size="md"
+    variant="bold"
+    textalign="center"
+  ></label>
+  <div style="display: flex; flex-direction: column; gap: 4px; margin-top: 4px">
+    <!-- Believability DVs by Rank -->
+    <label label="Believability DVs by Rank" size="sm" variant="bold"></label>
+    <table style="width: 250px">
+      <thead>
+        <tr>
+          <th style="text-align: center; font-size: 14px">Rank</th>
+          <th style="font-size: 14px">Believability DV</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td style="text-align: center"><strong>1</strong></td>
+          <td>
+            <numberfield
+              field="believabilityDV1"
+              minvalue="0"
+              placeholder="Enter amount..."
+            ></numberfield>
+          </td>
+        </tr>
+        <tr>
+          <td style="text-align: center"><strong>2</strong></td>
+          <td>
+            <numberfield
+              field="believabilityDV2"
+              minvalue="0"
+              placeholder="Enter amount..."
+            ></numberfield>
+          </td>
+        </tr>
+        <tr>
+          <td style="text-align: center"><strong>3</strong></td>
+          <td>
+            <numberfield
+              field="believabilityDV3"
+              minvalue="0"
+              placeholder="Enter amount..."
+            ></numberfield>
+          </td>
+        </tr>
+        <tr>
+          <td style="text-align: center"><strong>4</strong></td>
+          <td>
+            <numberfield
+              field="believabilityDV4"
+              minvalue="0"
+              placeholder="Enter amount..."
+            ></numberfield>
+          </td>
+        </tr>
+        <tr>
+          <td style="text-align: center"><strong>5</strong></td>
+          <td>
+            <numberfield
+              field="believabilityDV5"
+              minvalue="0"
+              placeholder="Enter amount..."
+            ></numberfield>
+          </td>
+        </tr>
+        <tr>
+          <td style="text-align: center"><strong>6</strong></td>
+          <td>
+            <numberfield
+              field="believabilityDV6"
+              minvalue="0"
+              placeholder="Enter amount..."
+            ></numberfield>
+          </td>
+        </tr>
+        <tr>
+          <td style="text-align: center"><strong>7</strong></td>
+          <td>
+            <numberfield
+              field="believabilityDV7"
+              minvalue="0"
+              placeholder="Enter amount..."
+            ></numberfield>
+          </td>
+        </tr>
+        <tr>
+          <td style="text-align: center"><strong>8</strong></td>
+          <td>
+            <numberfield
+              field="believabilityDV8"
+              minvalue="0"
+              placeholder="Enter amount..."
+            ></numberfield>
+          </td>
+        </tr>
+        <tr>
+          <td style="text-align: center"><strong>9</strong></td>
+          <td>
+            <numberfield
+              field="believabilityDV9"
+              minvalue="0"
+              placeholder="Enter amount..."
+            ></numberfield>
+          </td>
+        </tr>
+        <tr>
+          <td style="text-align: center"><strong>10</strong></td>
+          <td>
+            <numberfield
+              field="believabilityDV10"
+              minvalue="0"
+              placeholder="Enter amount..."
+            ></numberfield>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+    <!-- Rumors -->
+    <label label="Rumors" size="sm" variant="bold"></label>
+    <list variant="striped" field="rumors" listtype="media_rumor_list"></list>
+    <!-- Other Tables -->
+    <div
+      style="display: flex; flex-direction: column; gap: 4px; margin-top: 4px"
+    >
+      <label label="Access/Sources" size="sm" variant="bold"></label>
+      <div style="display: flex; flex-direction: column; width: 100%">
+        <div style="display: flex; flex-direction: row; width: 100%">
+          <div style="width: 64px">
+            <label label="Rank" size="xs" variant="bold"></label>
+          </div>
+          <div>
+            <label label="Source" size="xs" variant="bold"></label>
+          </div>
+        </div>
+        <list variant="striped" field="access" listtype="basic_features"></list>
+      </div>
+    </div>
+    <div
+      style="display: flex; flex-direction: column; gap: 4px; margin-top: 4px"
+    >
+      <label label="Audiences" size="sm" variant="bold"></label>
+      <div style="display: flex; flex-direction: column; width: 100%">
+        <div style="display: flex; flex-direction: row; width: 100%">
+          <div style="width: 64px">
+            <label label="Rank" size="xs" variant="bold"></label>
+          </div>
+          <div>
+            <label label="Audience" size="xs" variant="bold"></label>
+          </div>
+        </div>
+        <list
+          variant="striped"
+          field="audiences"
+          listtype="basic_features"
+        ></list>
+      </div>
+    </div>
+    <div
+      style="display: flex; flex-direction: column; gap: 4px; margin-top: 4px"
+    >
+      <label label="Impact" size="sm" variant="bold"></label>
+      <div style="display: flex; flex-direction: column; width: 100%">
+        <div style="display: flex; flex-direction: row; width: 100%">
+          <div style="width: 64px">
+            <label label="Rank" size="xs" variant="bold"></label>
+          </div>
+          <div>
+            <label label="Details" size="xs" variant="bold"></label>
+          </div>
+        </div>
+        <list variant="striped" field="impact" listtype="basic_features"></list>
+      </div>
+    </div>
+  </div>
+</box>
+
+<!-- Medtech Properties -->
+
+<box field="medtechProperties" hidden="true">
+  <label
+    label="Medtech Properties"
+    size="md"
+    variant="bold"
+    textalign="center"
+  ></label>
+  <div style="display: flex; flex-direction: column; gap: 4px">
+    <numberfield
+      label="Synthesis DV"
+      size="sm"
+      field="synthesisDV"
+      width="100px"
+      placeholder="Enter DV..."
+    ></numberfield>
+    <!-- Cryosystem Operation Features by Rank in Cryosystem Operations -->
+    <label
+      label="Cryosystem Operation Features by Rank"
+      size="sm"
+      variant="bold"
+    ></label>
+    <div style="display: flex; flex-direction: column; width: 100%">
+      <div style="display: flex; flex-direction: row; width: 100%">
+        <div style="width: 64px">
+          <label label="Rank" size="xs" variant="bold"></label>
+        </div>
+        <div>
+          <label label="Feature" size="xs" variant="bold"></label>
+        </div>
+      </div>
+      <list
+        variant="striped"
+        field="cryosystemFeatures"
+        listtype="basic_features"
+      ></list>
+    </div>
+  </div>
+</box>
+
+<!-- Netrunner Properties -->
+
+<box field="netrunnerProperties" hidden="true">
+  <label
+    label="Netrunner Properties"
+    size="md"
+    variant="bold"
+    textalign="center"
+  ></label>
+  <div style="display: flex; flex-direction: column; gap: 4px">
+    <stringfield
+      label="ZAP Damage"
+      size="sm"
+      field="zapDamage"
+      placeholder="Enter ZAP damage..."
+    ></stringfield>
+    <label label="NET Actions by Rank" size="sm" variant="bold"></label>
+    <table style="width: 250px">
+      <thead>
+        <tr>
+          <th style="text-align: center; font-size: 14px">Rank</th>
+          <th style="font-size: 14px">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td style="text-align: center"><strong>1</strong></td>
+          <td>
+            <numberfield
+              field="netActionsRank1"
+              minvalue="0"
+              placeholder="Enter amount..."
+            ></numberfield>
+          </td>
+        </tr>
+        <tr>
+          <td style="text-align: center"><strong>2</strong></td>
+          <td>
+            <numberfield
+              field="netActionsRank2"
+              minvalue="0"
+              placeholder="Enter amount..."
+            ></numberfield>
+          </td>
+        </tr>
+        <tr>
+          <td style="text-align: center"><strong>3</strong></td>
+          <td>
+            <numberfield
+              field="netActionsRank3"
+              minvalue="0"
+              placeholder="Enter amount..."
+            ></numberfield>
+          </td>
+        </tr>
+        <tr>
+          <td style="text-align: center"><strong>4</strong></td>
+          <td>
+            <numberfield
+              field="netActionsRank4"
+              minvalue="0"
+              placeholder="Enter amount..."
+            ></numberfield>
+          </td>
+        </tr>
+        <tr>
+          <td style="text-align: center"><strong>5</strong></td>
+          <td>
+            <numberfield
+              field="netActionsRank5"
+              minvalue="0"
+              placeholder="Enter amount..."
+            ></numberfield>
+          </td>
+        </tr>
+        <tr>
+          <td style="text-align: center"><strong>6</strong></td>
+          <td>
+            <numberfield
+              field="netActionsRank6"
+              minvalue="0"
+              placeholder="Enter amount..."
+            ></numberfield>
+          </td>
+        </tr>
+        <tr>
+          <td style="text-align: center"><strong>7</strong></td>
+          <td>
+            <numberfield
+              field="netActionsRank7"
+              minvalue="0"
+              placeholder="Enter amount..."
+            ></numberfield>
+          </td>
+        </tr>
+        <tr>
+          <td style="text-align: center"><strong>8</strong></td>
+          <td>
+            <numberfield
+              field="netActionsRank8"
+              minvalue="0"
+              placeholder="Enter amount..."
+            ></numberfield>
+          </td>
+        </tr>
+        <tr>
+          <td style="text-align: center"><strong>9</strong></td>
+          <td>
+            <numberfield
+              field="netActionsRank9"
+              minvalue="0"
+              placeholder="Enter amount..."
+            ></numberfield>
+          </td>
+        </tr>
+        <tr>
+          <td style="text-align: center"><strong>10</strong></td>
+          <td>
+            <numberfield
+              field="netActionsRank10"
+              minvalue="0"
+              placeholder="Enter amount..."
+            ></numberfield>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</box>
+
+<!-- Nomad Properties -->
+
+<box field="nomadProperties" hidden="true">
+  <label
+    label="Nomad Properties"
+    size="md"
+    variant="bold"
+    textalign="center"
+  ></label>
+  <label
+    label="Use the Nomad Panel on the Character Sheet to add vehicles to your Family Motorpool"
+    size="sm"
+    textalign="center"
+  ></label>
+</box>
+
+<!-- Rockerboy Properties -->
+
+<box field="rockerboyProperties" hidden="true">
+  <label
+    label="Rockerboy Properties"
+    size="md"
+    variant="bold"
+    textalign="center"
+  ></label>
+  <div style="display: flex; flex-direction: row; gap: 4px">
+    <numberfield
+      label="Single Impact DV"
+      size="sm"
+      field="singleImpactDV"
+      placeholder="Enter amount..."
+    ></numberfield>
+    <numberfield
+      label="Group Impact DV"
+      size="sm"
+      field="groupImpactDV"
+      placeholder="Enter amount..."
+    ></numberfield>
+    <numberfield
+      label="Huge Group Impact DV"
+      size="sm"
+      field="hugeGroupImpactDV"
+      placeholder="Enter amount..."
+    ></numberfield>
+  </div>
+  <!-- Other Tables -->
+  <div style="display: flex; flex-direction: column; gap: 4px; margin-top: 4px">
+    <label label="Venues You Can Play" size="sm" variant="bold"></label>
+    <div style="display: flex; flex-direction: column; width: 100%">
+      <div style="display: flex; flex-direction: row; width: 100%">
+        <div style="width: 64px">
+          <label label="Rank" size="xs" variant="bold"></label>
+        </div>
+        <div>
+          <label label="Venue" size="xs" variant="bold"></label>
+        </div>
+      </div>
+      <list variant="striped" field="venues" listtype="basic_features"></list>
+    </div>
+  </div>
+  <div style="display: flex; flex-direction: column; gap: 4px; margin-top: 4px">
+    <label label="Impact on a Single Fan" size="sm" variant="bold"></label>
+    <div style="display: flex; flex-direction: column; width: 100%">
+      <div style="display: flex; flex-direction: row; width: 100%">
+        <div style="width: 64px">
+          <label label="Rank" size="xs" variant="bold"></label>
+        </div>
+        <div>
+          <label label="Impact" size="xs" variant="bold"></label>
+        </div>
+      </div>
+      <list
+        variant="striped"
+        field="impactSingleFan"
+        listtype="basic_features"
+      ></list>
+    </div>
+  </div>
+  <div style="display: flex; flex-direction: column; gap: 4px; margin-top: 4px">
+    <label
+      label="Impact on a Small Group of Fans"
+      size="sm"
+      variant="bold"
+    ></label>
+    <div style="display: flex; flex-direction: column; width: 100%">
+      <div style="display: flex; flex-direction: row; width: 100%">
+        <div style="width: 64px">
+          <label label="Rank" size="xs" variant="bold"></label>
+        </div>
+        <div>
+          <label label="Impact" size="xs" variant="bold"></label>
+        </div>
+      </div>
+      <list
+        variant="striped"
+        field="impactSmallGroup"
+        listtype="basic_features"
+      ></list>
+    </div>
+  </div>
+  <div style="display: flex; flex-direction: column; gap: 4px; margin-top: 4px">
+    <label
+      label="Impact on a Huge Group of Fans"
+      size="sm"
+      variant="bold"
+    ></label>
+    <div style="display: flex; flex-direction: column; width: 100%">
+      <div style="display: flex; flex-direction: row; width: 100%">
+        <div style="width: 64px">
+          <label label="Rank" size="xs" variant="bold"></label>
+        </div>
+        <div>
+          <label label="Impact" size="xs" variant="bold"></label>
+        </div>
+      </div>
+      <list
+        variant="striped"
+        field="impactHugeGroup"
+        listtype="basic_features"
+      ></list>
+    </div>
+  </div>
+</box>
+
+<!-- Solo Properties -->
+
+<box field="soloProperties" hidden="true">
+  <label
+    label="Solo Properties"
+    size="md"
+    variant="bold"
+    textalign="center"
+  ></label>
+  <div style="display: flex; flex-direction: column; gap: 4px; margin-top: 4px">
+    <label
+      label="Damage Deflection Details"
+      size="sm"
+      variant="bold"
+      textalign="left"
+    ></label>
+    <richtextfield
+      size="sm"
+      field="damageDeflection"
+      placeholder="Enter damage deflection details..."
+    ></richtextfield>
+  </div>
+  <div style="display: flex; flex-direction: column; gap: 4px; margin-top: 4px">
+    <label
+      label="Fumble Recovery Details"
+      size="sm"
+      variant="bold"
+      textalign="left"
+    ></label>
+    <richtextfield
+      size="sm"
+      field="fumbleRecovery"
+      placeholder="Enter fumble recovery details..."
+    ></richtextfield>
+  </div>
+  <div style="display: flex; flex-direction: column; gap: 4px; margin-top: 4px">
+    <label
+      label="Initiative Reaction Details"
+      size="sm"
+      variant="bold"
+      textalign="left"
+    ></label>
+    <richtextfield
+      size="sm"
+      field="initiativeReaction"
+      placeholder="Enter initiative reaction details..."
+    ></richtextfield>
+  </div>
+  <div style="display: flex; flex-direction: column; gap: 4px; margin-top: 4px">
+    <label
+      label="Precision Attack Details"
+      size="sm"
+      variant="bold"
+      textalign="left"
+    ></label>
+    <richtextfield
+      size="sm"
+      field="precisionAttack"
+      placeholder="Enter precision attack details..."
+    ></richtextfield>
+  </div>
+  <div style="display: flex; flex-direction: column; gap: 4px; margin-top: 4px">
+    <label
+      label="Spot Weakness Details"
+      size="sm"
+      variant="bold"
+      textalign="left"
+    ></label>
+    <richtextfield
+      size="sm"
+      field="spotWeakness"
+      placeholder="Enter spot weakness details..."
+    ></richtextfield>
+  </div>
+  <div style="display: flex; flex-direction: column; gap: 4px; margin-top: 4px">
+    <label
+      label="Threat Detection Details"
+      size="sm"
+      variant="bold"
+      textalign="left"
+    ></label>
+    <richtextfield
+      size="sm"
+      field="threatDetection"
+      placeholder="Enter threat detection details..."
+    ></richtextfield>
+  </div>
+</box>
+
+<!-- Tech Properties -->
+
+<box field="techProperties" hidden="true">
+  <label
+    label="Tech Properties"
+    size="md"
+    variant="bold"
+    textalign="center"
+  ></label>
+  <div style="display: flex; flex-direction: column; gap: 4px; margin-top: 4px">
+    <label
+      label="Field Expertise Details"
+      size="sm"
+      variant="bold"
+      textalign="left"
+    ></label>
+    <richtextfield
+      size="sm"
+      field="fieldExpertise"
+      placeholder="Enter field expertise details..."
+    ></richtextfield>
+  </div>
+  <div style="display: flex; flex-direction: column; gap: 4px; margin-top: 4px">
+    <label
+      label="Upgrade Expertise Details"
+      size="sm"
+      variant="bold"
+      textalign="left"
+    ></label>
+    <richtextfield
+      size="sm"
+      field="upgradeExpertise"
+      placeholder="Enter upgrade expertise details..."
+    ></richtextfield>
+  </div>
+  <div style="display: flex; flex-direction: column; gap: 4px; margin-top: 4px">
+    <label
+      label="Fabrication Expertise Details"
+      size="sm"
+      variant="bold"
+      textalign="left"
+    ></label>
+    <richtextfield
+      size="sm"
+      field="fabricationExpertise"
+      placeholder="Enter fabrication expertise details..."
+    ></richtextfield>
+  </div>
+  <div style="display: flex; flex-direction: column; gap: 4px; margin-top: 4px">
+    <label
+      label="Invention Expertise Details"
+      size="sm"
+      variant="bold"
+      textalign="left"
+    ></label>
+    <richtextfield
+      size="sm"
+      field="inventionExpertise"
+      placeholder="Enter invention expertise details..."
+    ></richtextfield>
+  </div>
+  <div style="display: flex; flex-direction: column; gap: 4px; margin-top: 4px">
+    <label
+      label="DVs by Cost Category"
+      size="sm"
+      variant="bold"
+      textalign="left"
+    ></label>
+    <table style="width: 400px">
+      <thead>
+        <tr>
+          <th style="text-align: left; font-size: 14px">Cost Category</th>
+          <th style="font-size: 14px">DV</th>
+          <th style="font-size: 14px">Time</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td style="text-align: left; font-size: 14px">Cheap/Everyday</td>
+          <td>
+            <numberfield
+              field="dvCheapEveryday"
+              minvalue="0"
+              placeholder="Enter dv..."
+            ></numberfield>
+          </td>
+          <td>
+            <stringfield
+              field="timeCheapEveryday"
+              placeholder="Enter time..."
+              multiline="true"
+            ></stringfield>
+          </td>
+        </tr>
+        <tr>
+          <td style="text-align: left; font-size: 14px">Costly</td>
+          <td>
+            <numberfield
+              field="dvCostly"
+              minvalue="0"
+              placeholder="Enter dv..."
+            ></numberfield>
+          </td>
+          <td>
+            <stringfield
+              field="timeCostly"
+              placeholder="Enter time..."
+              multiline="true"
+            ></stringfield>
+          </td>
+        </tr>
+        <tr>
+          <td style="text-align: left; font-size: 14px">Premium</td>
+          <td>
+            <numberfield
+              field="dvPremium"
+              minvalue="0"
+              placeholder="Enter dv..."
+            ></numberfield>
+          </td>
+          <td>
+            <stringfield
+              field="timePremium"
+              placeholder="Enter time..."
+              multiline="true"
+            ></stringfield>
+          </td>
+        </tr>
+        <tr>
+          <td style="text-align: left; font-size: 14px">Expensive</td>
+          <td>
+            <numberfield
+              field="dvExpensive"
+              minvalue="0"
+              placeholder="Enter dv..."
+            ></numberfield>
+          </td>
+          <td>
+            <stringfield
+              field="timeExpensive"
+              placeholder="Enter time..."
+              multiline="true"
+            ></stringfield>
+          </td>
+        </tr>
+        <tr>
+          <td style="text-align: left; font-size: 14px">Very Expensive</td>
+          <td>
+            <numberfield
+              field="dvVeryExpensive"
+              minvalue="0"
+              placeholder="Enter dv..."
+            ></numberfield>
+          </td>
+          <td>
+            <stringfield
+              field="timeVeryExpensive"
+              placeholder="Enter time..."
+              multiline="true"
+            ></stringfield>
+          </td>
+        </tr>
+        <tr>
+          <td style="text-align: left; font-size: 14px">Luxary</td>
+          <td>
+            <numberfield
+              field="dvLuxary"
+              minvalue="0"
+              placeholder="Enter dv..."
+            ></numberfield>
+          </td>
+          <td>
+            <stringfield
+              field="timeLuxary"
+              placeholder="Enter time..."
+              multiline="true"
+            ></stringfield>
+          </td>
+        </tr>
+        <tr>
+          <td style="text-align: left; font-size: 14px">Super Luxary</td>
+          <td>
+            <numberfield
+              field="dvSuperLuxary"
+              minvalue="0"
+              placeholder="Enter dv..."
+            ></numberfield>
+          </td>
+          <td>
+            <stringfield
+              field="timeSuperLuxary"
+              placeholder="Enter time..."
+              multiline="true"
+            ></stringfield>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</box>
+
+<!-- Custom Properties -->
+
+<box field="customProperties" hidden="false">
+  <label
+    label="Custom Properties"
+    size="md"
+    variant="bold"
+    textalign="center"
+  ></label>
+  <label label="Features" size="sm" variant="bold"></label>
+  <div style="display: flex; flex-direction: row; gap: 4px">
+    <div style="width: 64px">
+      <label label="Rank" size="xs" variant="bold"></label>
+    </div>
+    <div>
+      <label label="Feature" size="xs" variant="bold"></label>
+    </div>
+  </div>
+  <list variant="striped" field="features" listtype="basic_features"></list>
+</box>

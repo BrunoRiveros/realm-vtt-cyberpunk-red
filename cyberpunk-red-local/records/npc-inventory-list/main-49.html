@@ -1,0 +1,132 @@
+<script>
+  function onItemEquipped() {
+    const itemDataPath = dataPath.replace(".data.carried", "");
+    const item = api.getValue(itemDataPath);
+
+    const itemFields = api.getValue(`${itemDataPath}.fields`) || {};
+    const itemType = api.getValue(`${itemDataPath}.data.type`);
+
+    const isDrug = api.getValue(`${itemDataPath}.data.type`) === "drug";
+    const isAmmo = api.getValue(`${itemDataPath}.data.type`) === "ammo";
+    const isAmmoWithValues =
+      isAmmo &&
+      ((api.getValue(`${itemDataPath}.data.effects`) &&
+        api.getValue(`${itemDataPath}.data.effects`).length > 0) ||
+        (api.getValue(`${itemDataPath}.data.conditions`) &&
+          api.getValue(`${itemDataPath}.data.conditions`).length > 0) ||
+        api.getValue(`${itemDataPath}.data.healing`) ||
+        api.getValue(`${itemDataPath}.data.useDamage`) ||
+        api.getValue(`${itemDataPath}.data.checkSkill`) ||
+        api.getValue(`${itemDataPath}.data.checkDV`));
+    const isConsumable =
+      api.getValue(`${itemDataPath}.data.consumable`) || false;
+
+    const hasUseBtn = api.getValue(`${itemDataPath}.data.hasUseBtn`) || false;
+
+    // Some items add/remove effects when equipped
+    const equipEffect = api.getValue(`${itemDataPath}.data.equipEffect`);
+    const isEquipEffect = value === "equipped";
+
+    if (equipEffect) {
+      const effect = JSON.parse(equipEffect);
+      const effectId = effect?._id || "";
+      const ourToken = api.getToken();
+      if (effectId && isEquipEffect && ourToken) {
+        api.addEffectById(effectId, ourToken);
+      } else if (effectId && !isEquipEffect && ourToken) {
+        api.removeEffectById(effectId, ourToken);
+      }
+    }
+
+    // If an item's equipped status changes, update any bonuses
+    const valuesToSet = {};
+
+    // If this is cyberware, and we haven't set the active status, set it to true
+    const activeStatus = api.getValue(`${itemDataPath}.data.active`);
+    if (value === "equipped" && itemType === "cyberware") {
+      if (activeStatus === undefined || activeStatus === null) {
+        valuesToSet[`${itemDataPath}.data.active`] = true;
+      }
+    }
+
+    // Get the current ac due to armor and set it on the
+    // record
+    const bestEquippedArmor = getBestEquippedArmor(record);
+    // Update attributes as per modifiers
+    updateAttributes(valuesToSet, bestEquippedArmor.highestPenalty);
+
+    // Update the fields to show/hide the correct buttons on attack list
+    // based on type incase it changed
+    valuesToSet[`${itemDataPath}.fields`] = {
+      ...itemFields,
+      // Hide use button unless it's consumable, has use button, of is ammo (with values) or drug
+      useBtn: {
+        hidden: !isConsumable && !hasUseBtn && !isAmmoWithValues && !isDrug,
+      },
+    };
+
+    valuesToSet["data.headArmor"] = bestEquippedArmor.head[0]?.name || "";
+    valuesToSet["data.headArmorSP"] = bestEquippedArmor.head[0]?.curSp || 0;
+    valuesToSet["data.headArmorPenalty"] =
+      bestEquippedArmor.head[0]?.penalty || 0;
+    valuesToSet["data.bodyArmor"] = bestEquippedArmor.body[0]?.name || "";
+    valuesToSet["data.bodyArmorSP"] = bestEquippedArmor.body[0]?.curSp || 0;
+    valuesToSet["data.bodyArmorPenalty"] =
+      bestEquippedArmor.body[0]?.penalty || 0;
+    valuesToSet["data.shield"] = bestEquippedArmor.shield[0]?.name || "";
+    valuesToSet["data.shieldHP"] = bestEquippedArmor.shield[0]?.curSp || 0;
+    valuesToSet["data.shieldPenalty"] =
+      bestEquippedArmor.shield[0]?.penalty || 0;
+
+    if (Object.keys(valuesToSet).length > 0) {
+      api.setValues(valuesToSet);
+    }
+  }
+
+  function useInvItem() {
+    const itemDataPath = dataPath.replace(".data.useBtn", "");
+    useItem(record, itemDataPath);
+  }
+</script>
+
+<div style="height: 30px; display: flex; gap: 4px; align-items: center">
+  <div style="width: 30px; min-width: 30px">
+    <portrait width="30px" height="30px" name="portrait"></portrait>
+  </div>
+  <div style="width: 60px">
+    <numberfield
+      size="xs"
+      variant="tooltip"
+      label="Count"
+      field="count"
+      placeholder="0"
+    ></numberfield>
+  </div>
+  <div style="flex-grow: 1">
+    <namefield
+      size="xs"
+      variant="standard"
+      placeholder="Item"
+      field="namefield"
+      updateonblur="true"
+    />
+  </div>
+  <button
+    hidden="true"
+    size="xs"
+    field="useBtn"
+    variant="light"
+    onclick="useInvItem();"
+    label="Use"
+  ></button>
+  <dropdown
+    size="xs"
+    field="carried"
+    variant="default"
+    width="95px"
+    defaultvalue="carried"
+    disablediflocked="false"
+    options='[{"label": "Carried", "value": "carried"}, {"label": "Equipped", "value": "equipped"}, {"label": "Dropped", "value": "dropped"}]'
+    onchange="onItemEquipped();"
+  ></dropdown>
+</div>

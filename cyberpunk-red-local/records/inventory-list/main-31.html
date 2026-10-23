@@ -1,0 +1,67 @@
+<script>
+  // Shared with the grid Equip/Carry/Drop actions; implementation lives in
+  // commonScript (onItemEquippedFor).
+  function onItemEquipped() {
+    onItemEquippedFor(dataPath.replace(".data.carried", ""), value);
+  }
+
+  function useInvItem() {
+    const itemDataPath = dataPath.replace(".data.useBtn", "");
+    useItem(record, itemDataPath);
+  }
+</script>
+
+<div
+  class="rvtt-cpr-row"
+  style="height: 30px; display: flex; gap: 4px; align-items: center"
+>
+  <div style="width: 30px; min-width: 30px">
+    <portrait width="30px" height="30px" name="portrait"></portrait>
+  </div>
+  <div style="width: 60px">
+    <numberfield
+      size="xs"
+      variant="tooltip"
+      label="Count"
+      field="count"
+      placeholder="0"
+    ></numberfield>
+  </div>
+  <div style="flex-grow: 1">
+    <namefield
+      size="xs"
+      variant="standard"
+      placeholder="Item"
+      field="namefield"
+      updateonblur="true"
+    />
+  </div>
+  <button
+    hidden="true"
+    size="xxs"
+    field="useBtn"
+    width="40px"
+    onclick="useInvItem()"
+    label="Use"
+  ></button>
+  <stringfield
+    width="100px"
+    size="xs"
+    variant="tooltip-underline"
+    label="Location"
+    field="location"
+    placeholder="Enter Location..."
+    updateonblur="true"
+  >
+  </stringfield>
+  <dropdown
+    size="xs"
+    field="carried"
+    variant="default"
+    width="95px"
+    defaultvalue="carried"
+    disablediflocked="false"
+    options='[{"label": "Carried", "value": "carried"}, {"label": "Equipped", "value": "equipped"}, {"label": "Dropped", "value": "dropped"}]'
+    onchange="onItemEquipped()"
+  ></dropdown>
+</div>
