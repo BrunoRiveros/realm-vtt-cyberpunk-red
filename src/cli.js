@@ -8,6 +8,13 @@ import { promptSelect, promptConfirm } from "./prompts.js";
 import { runRecords } from "./records.js";
 import { runEffects } from "./effects.js";
 
+// Load REALM_EMAIL / REALM_PASSWORD from the project's .env, if present.
+try {
+  process.loadEnvFile(new URL("../.env", import.meta.url));
+} catch {
+  // No .env: fall back to the shell environment or interactive prompts.
+}
+
 const program = new Command();
 
 program

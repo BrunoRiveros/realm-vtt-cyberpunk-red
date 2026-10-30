@@ -50,6 +50,8 @@ Options:
 
 If you omit `--id` and `--new`, the tool will fetch your owned rulesets and let you pick one interactively.
 
+If `--email` / `--password` are omitted, the tool reads `REALM_EMAIL` / `REALM_PASSWORD` from the environment or from a `.env` file in the project root (see `.env.example`) before prompting.
+
 ## Ruleset Directory Structure
 
 A ruleset directory contains a `ruleset.config.json` and all referenced files:

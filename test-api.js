@@ -2,9 +2,10 @@
 import readline from "node:readline/promises";
 import fs from "node:fs/promises";
 
-// Carga REALM_EMAIL, REALM_PASSWORD y REALM_CAMPAIGN_ID desde .env si existe.
+// Carga REALM_EMAIL, REALM_PASSWORD y REALM_CAMPAIGN_ID desde el .env junto a
+// este script, sin importar desde qué carpeta se ejecute.
 try {
-  process.loadEnvFile(".env");
+  process.loadEnvFile(new URL(".env", import.meta.url));
 } catch {
   // Sin .env: se piden los datos por consola.
 }

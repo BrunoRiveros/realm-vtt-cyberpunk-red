@@ -21,3 +21,6 @@ cyberpunk-red-local/BACKUP-INFO.txt
 
 # Logs
 npm-debug.log*
+
+# Vista previa del catálogo de armas con rebuild
+armas-rebuild-preview.json
