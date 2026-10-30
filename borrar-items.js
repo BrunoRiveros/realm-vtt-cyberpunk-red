@@ -4,9 +4,11 @@
 // Uso:
 //   node borrar-items.js <campo> <valor>              (solo muestra la lista)
 //   node borrar-items.js <campo> <valor> --confirmar  (respalda y borra)
+//   --excluir "Nombre 1,Nombre 2"                     (conserva esos items)
 //
 // Ejemplo:
 //   node borrar-items.js cyberwareInstallSlot fashionware
+//   node borrar-items.js type gear --excluir "Techtool,Medtech Bag"
 
 import fs from "node:fs/promises";
 
@@ -30,10 +32,25 @@ function getPath(obj, path) {
 async function main() {
   const args = process.argv.slice(2);
   const confirmar = args.includes("--confirmar");
-  const [campo, valor] = args.filter(a => a !== "--confirmar");
+
+  // --excluir recibe una lista de nombres exactos separados por comas.
+  const excluirIndex = args.indexOf("--excluir");
+  const excluir =
+    excluirIndex === -1
+      ? []
+      : (args[excluirIndex + 1] || "").split(",").map(n => n.trim()).filter(Boolean);
+
+  const [campo, valor] = args.filter(
+    (a, i) =>
+      a !== "--confirmar" &&
+      i !== excluirIndex &&
+      (excluirIndex === -1 || i !== excluirIndex + 1)
+  );
 
   if (!campo || valor === undefined) {
-    throw new Error("Uso: node borrar-items.js <campo> <valor> [--confirmar]");
+    throw new Error(
+      'Uso: node borrar-items.js <campo> <valor> [--excluir "Nombre 1,Nombre 2"] [--confirmar]'
+    );
   }
 
   const email = process.env.REALM_EMAIL;
@@ -95,10 +112,21 @@ async function main() {
     r =>
       r.campaignId === CAMPAIGN_ID &&
       r.recordType === RECORD_TYPE &&
-      String(getPath(r.data, campo)) === valor
+      String(getPath(r.data, campo)) === valor &&
+      !excluir.includes(r.name)
   );
 
+  // Avisar si un nombre a excluir no existe (probablemente mal escrito).
+  for (const nombre of excluir) {
+    if (!todos.some(r => r.name === nombre)) {
+      throw new Error(`No existe ningún item llamado "${nombre}". No se borró nada.`);
+    }
+  }
+
   console.log(`Items revisados: ${todos.length}`);
+  if (excluir.length > 0) {
+    console.log(`Excluidos: ${excluir.length}`);
+  }
   console.log(`Coinciden con data.${campo} = "${valor}": ${coincidencias.length}`);
 
   for (const r of coincidencias) {

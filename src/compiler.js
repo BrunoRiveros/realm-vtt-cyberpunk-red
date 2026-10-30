@@ -2,6 +2,16 @@ import { readFile } from "node:fs/promises";
 import { join, resolve } from "node:path";
 
 /**
+ * Read a referenced source file with LF line endings. Git on Windows checks
+ * files out with CRLF, and Realm VTT fails to parse multi-line attribute
+ * values (e.g. dropdown `options` JSON) that contain a carriage return.
+ */
+async function readSource(filePath) {
+  const text = await readFile(filePath, "utf-8");
+  return text.replace(/\r\n?/g, "\n");
+}
+
+/**
  * Checks if a value is a file reference object: { "file": "path/to/file" }
  */
 function isFileRef(value) {
@@ -29,7 +39,7 @@ async function resolveFileRefs(obj, dir, verbose = false) {
   if (isFileRef(obj)) {
     const filePath = join(dir, obj.file);
     if (verbose) console.log(`  Reading file: ${obj.file}`);
-    return readFile(filePath, "utf-8");
+    return readSource(filePath);
   }
 
   const result = {};
@@ -126,7 +136,7 @@ export async function compile(directory, { verbose = false } = {}) {
           ? await (async () => {
               const filePath = join(dir, tab.file);
               if (verbose) console.log(`  Reading tab: ${tab.file}`);
-              return readFile(filePath, "utf-8");
+              return readSource(filePath);
             })()
           : tab.layout || "";
         const result = { name: tab.name, layout };
@@ -160,7 +170,7 @@ export async function compile(directory, { verbose = false } = {}) {
               ? await (async () => {
                   const filePath = join(dir, step.file);
                   if (verbose) console.log(`  Reading wizard step: ${step.file}`);
-                  return readFile(filePath, "utf-8");
+                  return readSource(filePath);
                 })()
               : step.layout || "";
             const result = { name: step.name, layout };
@@ -191,7 +201,7 @@ export async function compile(directory, { verbose = false } = {}) {
           ? await (async () => {
               const filePath = join(dir, rt.file);
               if (verbose) console.log(`  Reading rollType: ${rt.file}`);
-              return readFile(filePath, "utf-8");
+              return readSource(filePath);
             })()
           : rt.handleResult || "";
         return { name: rt.name, handleResult };
@@ -209,7 +219,7 @@ export async function compile(directory, { verbose = false } = {}) {
     if (verbose) console.log(`  Reading campaign panel: ${file}`);
     settings.otherSettings.campaignPanel = {
       ...rest,
-      layout: await readFile(filePath, "utf-8"),
+      layout: await readSource(filePath),
     };
   }
 

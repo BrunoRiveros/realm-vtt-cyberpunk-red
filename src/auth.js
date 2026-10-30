@@ -3,7 +3,9 @@ import { prompt, promptPassword } from "./prompts.js";
 
 /**
  * Create an authenticated API client from CLI options.
- * Supports --token (direct JWT) or email/password login.
+ * Supports --token (direct JWT) or email/password login. Email and password
+ * fall back to REALM_EMAIL / REALM_PASSWORD (from the environment or .env)
+ * before prompting.
  */
 export async function createAuthenticatedClient(opts) {
   const client = new RulesetAPIClient(opts.url);
@@ -12,8 +14,12 @@ export async function createAuthenticatedClient(opts) {
     client.setToken(opts.token);
     if (opts.verbose) console.error("Using provided token.");
   } else {
-    const email = opts.email || (await prompt("Email: "));
-    const password = opts.password || (await promptPassword("Password: "));
+    const email =
+      opts.email || process.env.REALM_EMAIL || (await prompt("Email: "));
+    const password =
+      opts.password ||
+      process.env.REALM_PASSWORD ||
+      (await promptPassword("Password: "));
     if (opts.verbose) console.error("Logging in...");
     await client.login(email, password);
     console.error("Logged in successfully.");
